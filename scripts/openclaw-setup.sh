@@ -217,8 +217,12 @@ interview_user() {
       PROVIDER_NAME="ollama"
       PROVIDER_API="openai-completions"
       PROVIDER_BASE_URL="http://localhost:11434/v1"
-      read -rp "Model ID [llama3.1:8b]: " DEFAULT_MODEL_ID
-      DEFAULT_MODEL_ID="${DEFAULT_MODEL_ID:-llama3.1:8b}"
+      if [[ "$NON_INTERACTIVE" == "true" ]]; then
+        DEFAULT_MODEL_ID="${OC_MODEL_ID:-llama3.1:8b}"
+      else
+        read -rp "Model ID [llama3.1:8b]: " DEFAULT_MODEL_ID
+        DEFAULT_MODEL_ID="${DEFAULT_MODEL_ID:-llama3.1:8b}"
+      fi
       DEFAULT_MODEL="ollama/${DEFAULT_MODEL_ID}"
       API_KEY_VALUE=""
       API_KEY_ENV_NAME=""
@@ -229,15 +233,17 @@ interview_user() {
       ;;
   esac
 
-  # Gateway port
-  read -rp "Gateway port [18789]: " GW_PORT
-  GW_PORT="${GW_PORT:-18789}"
+  if [[ "$NON_INTERACTIVE" != "true" ]]; then
+    # Gateway port
+    read -rp "Gateway port [18789]: " GW_PORT
+    GW_PORT="${GW_PORT:-18789}"
 
-  # Channels
-  echo ""
-  echo "Available channels: slack, telegram, discord, signal, whatsapp, teams, webchat"
-  read -rp "Which channels to enable (comma-separated, or 'none') [none]: " CHANNELS
-  CHANNELS="${CHANNELS:-none}"
+    # Channels
+    echo ""
+    echo "Available channels: slack, telegram, discord, signal, whatsapp, teams, webchat"
+    read -rp "Which channels to enable (comma-separated, or 'none') [none]: " CHANNELS
+    CHANNELS="${CHANNELS:-none}"
+  fi
 
   # Channel tokens collected per-channel below
   CHANNEL_LIST=()
@@ -264,58 +270,62 @@ store_secrets() {
     log "Stored $API_KEY_ENV_NAME in $OPENCLAW_ENV"
   fi
 
-  # Collect and store channel tokens
-  for ch in "${CHANNEL_LIST[@]}"; do
-    ch="$(echo "$ch" | xargs)"  # trim whitespace
-    case "$ch" in
-      slack)
-        echo ""
-        echo "Slack Setup:"
-        echo "  1. Create a Slack app at https://api.slack.com/apps"
-        echo "  2. Enable Socket Mode and get an App Token (xapp-...)"
-        echo "  3. Install to workspace and get Bot Token (xoxb-...)"
-        echo "  Tokens stored in ~/.openclaw/.env, referenced via \${VAR}"
-        echo ""
-        read -rsp "Slack Bot Token (xoxb-..., hidden): " SLACK_BOT
-        echo ""
-        read -rsp "Slack App Token (xapp-..., hidden): " SLACK_APP
-        echo ""
-        echo "SLACK_BOT_TOKEN=${SLACK_BOT}" >> "$OPENCLAW_ENV"
-        echo "SLACK_APP_TOKEN=${SLACK_APP}" >> "$OPENCLAW_ENV"
-        log "Stored Slack tokens"
-        ;;
-      telegram)
-        echo ""
-        echo "Telegram Setup:"
-        echo "  1. Message @BotFather on Telegram"
-        echo "  2. Send /newbot and follow prompts"
-        echo "  3. Copy the bot token"
-        echo ""
-        read -rsp "Telegram Bot Token (hidden): " TG_TOKEN
-        echo ""
-        echo "TELEGRAM_BOT_TOKEN=${TG_TOKEN}" >> "$OPENCLAW_ENV"
-        log "Stored Telegram token"
-        ;;
-      discord)
-        echo ""
-        echo "Discord Setup:"
-        echo "  1. Go to https://discord.com/developers/applications"
-        echo "  2. Create application, add bot, copy token"
-        echo "  3. Enable Message Content Intent"
-        echo ""
-        read -rsp "Discord Bot Token (hidden): " DC_TOKEN
-        echo ""
-        echo "DISCORD_BOT_TOKEN=${DC_TOKEN}" >> "$OPENCLAW_ENV"
-        log "Stored Discord token"
-        ;;
-      signal)
-        log "Signal uses signal-cli (no token needed). Will configure pairing mode."
-        ;;
-      *)
-        warn "Channel '$ch' not yet automated. Configure manually after setup."
-        ;;
-    esac
-  done
+  # Collect and store channel tokens (skip in non-interactive — tokens must be pre-set in .env)
+  if [[ "$NON_INTERACTIVE" == "true" ]]; then
+    log "Non-interactive: skipping token prompts (tokens must be pre-set in $OPENCLAW_ENV)"
+  else
+    for ch in "${CHANNEL_LIST[@]}"; do
+      ch="$(echo "$ch" | xargs)"  # trim whitespace
+      case "$ch" in
+        slack)
+          echo ""
+          echo "Slack Setup:"
+          echo "  1. Create a Slack app at https://api.slack.com/apps"
+          echo "  2. Enable Socket Mode and get an App Token (xapp-...)"
+          echo "  3. Install to workspace and get Bot Token (xoxb-...)"
+          echo "  Tokens stored in ~/.openclaw/.env, referenced via \${VAR}"
+          echo ""
+          read -rsp "Slack Bot Token (xoxb-..., hidden): " SLACK_BOT
+          echo ""
+          read -rsp "Slack App Token (xapp-..., hidden): " SLACK_APP
+          echo ""
+          echo "SLACK_BOT_TOKEN=${SLACK_BOT}" >> "$OPENCLAW_ENV"
+          echo "SLACK_APP_TOKEN=${SLACK_APP}" >> "$OPENCLAW_ENV"
+          log "Stored Slack tokens"
+          ;;
+        telegram)
+          echo ""
+          echo "Telegram Setup:"
+          echo "  1. Message @BotFather on Telegram"
+          echo "  2. Send /newbot and follow prompts"
+          echo "  3. Copy the bot token"
+          echo ""
+          read -rsp "Telegram Bot Token (hidden): " TG_TOKEN
+          echo ""
+          echo "TELEGRAM_BOT_TOKEN=${TG_TOKEN}" >> "$OPENCLAW_ENV"
+          log "Stored Telegram token"
+          ;;
+        discord)
+          echo ""
+          echo "Discord Setup:"
+          echo "  1. Go to https://discord.com/developers/applications"
+          echo "  2. Create application, add bot, copy token"
+          echo "  3. Enable Message Content Intent"
+          echo ""
+          read -rsp "Discord Bot Token (hidden): " DC_TOKEN
+          echo ""
+          echo "DISCORD_BOT_TOKEN=${DC_TOKEN}" >> "$OPENCLAW_ENV"
+          log "Stored Discord token"
+          ;;
+        signal)
+          log "Signal uses signal-cli (no token needed). Will configure pairing mode."
+          ;;
+        *)
+          warn "Channel '$ch' not yet automated. Configure manually after setup."
+          ;;
+      esac
+    done
+  fi
 
   chmod 600 "$OPENCLAW_ENV"
   log "Secrets file permissions set to 600"
