@@ -34,11 +34,12 @@
 - [x] T010: Verify gateway running (pid 3084), config valid, model trendmicro-aiendpoint/claude-4.6-sonnet
 - [x] T011: Merge to main, push to grobomo/openclaw-setup
 
-## Phase 7: Remaining
+## Phase 7: Polish & Publish
 - [ ] T012: Publish skill to grobomo marketplace
-- [ ] T013: Re-add Slack channel IDs for specific channels (requireMention config)
-- [ ] T014: Re-add Signal channel config
-- [ ] T015: Re-add plugins (coconut-guardrails, hook-runner-gates, mfa-skill-guard)
-- [ ] T016: Re-add MCP server config (mcp-manager)
-- [ ] T017: Update setup script to handle model definitions atomically (learned from validation errors)
-- [ ] T018: Add --non-interactive mode to setup script for CI/fleet deployments
+- [x] T013: Add Slack channel IDs with per-channel requireMention (4 channels configured)
+- [x] T014: Signal channel support in setup script (no live account, deferred)
+- [x] T015: Enable plugins -- coconut-guardrails, hook-runner-gates, memory-core
+- [x] T016: MCP config validated clean (was empty in backup, nothing to restore)
+- [x] T017: Atomic model defs via --json (prevents validation errors from field-by-field sets)
+- [x] T018: Non-interactive mode (--non-interactive flag, OC_* env vars for CI/fleet)
+- [x] T019: Clean up stale branches and worktree (4 branches deleted, 1 worktree removed)
