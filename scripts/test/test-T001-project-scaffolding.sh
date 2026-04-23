@@ -9,7 +9,9 @@ check() { if [ -e "$1" ]; then echo "PASS: $1"; ((PASS++)); else echo "FAIL: $1 
 check ".github/publish.json"
 check ".github/workflows/secret-scan.yml"
 check "docs/research.md"
-check "scripts/test/test-T001-project-scaffolding.sh"
+check "docs/setup-log.md"
+check "scripts/openclaw-setup.sh"
+check "skill/SKILL.md"
 check "TODO.md"
 
 echo "---"
