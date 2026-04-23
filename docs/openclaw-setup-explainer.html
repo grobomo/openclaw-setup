@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>openclaw-setup | Explainer</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; color: #e6edf3; font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; padding: 2rem; max-width: 1100px; margin: 0 auto; }
+  h1 { color: #58a6ff; font-size: 2rem; margin-bottom: 0.5rem; }
+  h1 span { color: #8b949e; font-weight: 300; font-size: 1rem; }
+  .subtitle { color: #8b949e; margin-bottom: 2rem; font-size: 1.1rem; }
+  .panel { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+  .panel-title { color: #58a6ff; font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; letter-spacing: 0.5px; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .side { padding: 1rem; border-radius: 8px; border: 1px solid; }
+  .side.before { background: #1c1008; border-color: #6e3a00; }
+  .side.after { background: #0d1a12; border-color: #238636; }
+  .side h3 { margin-bottom: 0.5rem; font-size: 0.9rem; }
+  .side.before h3 { color: #f85149; }
+  .side.after h3 { color: #3fb950; }
+  .side ul { list-style: none; padding-left: 0; }
+  .side li { padding: 0.3rem 0; font-size: 0.9rem; }
+  .side.before li::before { content: "[X] "; color: #f85149; font-family: monospace; }
+  .side.after li::before { content: "[+] "; color: #3fb950; font-family: monospace; }
+  .flow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: center; padding: 1rem 0; }
+  .flow-step { background: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 0.6rem 1rem; font-size: 0.85rem; text-align: center; min-width: 140px; }
+  .flow-arrow { color: #58a6ff; font-size: 1.2rem; font-weight: bold; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+  .card { border-radius: 8px; padding: 1rem; border: 1px solid; }
+  .card h4 { margin-bottom: 0.4rem; font-size: 0.95rem; }
+  .card p { font-size: 0.85rem; color: #8b949e; }
+  .card.core { border-color: #58a6ff; background: #0d1926; }
+  .card.core h4 { color: #58a6ff; }
+  .card.config { border-color: #8957e5; background: #170e26; }
+  .card.config h4 { color: #8957e5; }
+  .card.backend { border-color: #3fb950; background: #0d1a12; }
+  .card.backend h4 { color: #3fb950; }
+  .card.http { border-color: #d29922; background: #1a1508; }
+  .card.http h4 { color: #d29922; }
+  .cmd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+  .cmd { background: #21262d; border-radius: 6px; padding: 0.8rem; }
+  .cmd code { color: #79c0ff; font-size: 0.85rem; display: block; margin-bottom: 0.3rem; }
+  .cmd span { color: #8b949e; font-size: 0.8rem; }
+  code { background: #21262d; padding: 0.15rem 0.4rem; border-radius: 4px; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.85rem; }
+  @media (max-width: 700px) { .split, .cmd-grid, .cards { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<h1>openclaw-setup <span>v1.0</span></h1>
+<p class="subtitle">Repeatable OpenClaw deployment with secure secrets and atomic config</p>
+
+<!-- THE PROBLEM -->
+<div class="panel">
+  <div class="panel-title">[!] THE PROBLEM</div>
+  <div class="split">
+    <div class="side before">
+      <h3>Manual Setup</h3>
+      <ul>
+        <li>Agents edit openclaw.json directly -- JSON corruption (Bug #6028)</li>
+        <li>Gateway overwrites config on startup (#11355)</li>
+        <li>API keys pasted into config end up in git history</li>
+        <li>Setting provider fields one-by-one fails validation</li>
+        <li>Every install is different -- no repeatability</li>
+      </ul>
+    </div>
+    <div class="side after">
+      <h3>openclaw-setup</h3>
+      <ul>
+        <li>All config via <code>openclaw config set</code> -- no direct JSON</li>
+        <li>Secrets in <code>~/.openclaw/.env</code> with chmod 600</li>
+        <li>Atomic provider definitions via <code>--json</code></li>
+        <li>Non-interactive mode for CI/fleet with OC_* env vars</li>
+        <li>Same script for fresh install, recovery, and fleet</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="panel">
+  <div class="panel-title">[~] HOW IT WORKS</div>
+  <div class="flow">
+    <div class="flow-step">Prerequisites<br><small>Node.js 22.16+</small></div>
+    <span class="flow-arrow">--&gt;</span>
+    <div class="flow-step">Interview<br><small>or OC_* env vars</small></div>
+    <span class="flow-arrow">--&gt;</span>
+    <div class="flow-step">Secrets<br><small>~/.openclaw/.env</small></div>
+    <span class="flow-arrow">--&gt;</span>
+    <div class="flow-step">Configure<br><small>openclaw config set</small></div>
+    <span class="flow-arrow">--&gt;</span>
+    <div class="flow-step">Gateway Start<br><small>+ doctor verify</small></div>
+  </div>
+</div>
+
+<!-- FILES / CONFIG -->
+<div class="panel">
+  <div class="panel-title">[=] FILES</div>
+  <div class="cards">
+    <div class="card core">
+      <h4>scripts/openclaw-setup.sh</h4>
+      <p>Main automation script. Interactive interview, secret storage, config via CLI, gateway start + verify.</p>
+    </div>
+    <div class="card config">
+      <h4>skill/SKILL.md</h4>
+      <p>Claude Code skill definition. Triggers on "install openclaw", "setup openclaw", etc.</p>
+    </div>
+    <div class="card backend">
+      <h4>docs/research.md</h4>
+      <p>Consolidated from 7 sources: official docs, config ref, security guide, bug reports, production gotchas.</p>
+    </div>
+    <div class="card http">
+      <h4>scripts/test/test-T*.sh</h4>
+      <p>15 test suites, 83 assertions. Covers scaffolding, secret scan, WSL state, plugins, atomic models.</p>
+    </div>
+  </div>
+</div>
+
+<!-- WHY USE IT -->
+<div class="panel">
+  <div class="panel-title">[*] WHY USE IT</div>
+  <div class="cards">
+    <div class="card core">
+      <h4>{} No JSON Corruption</h4>
+      <p>All config changes go through <code>openclaw config set</code>. The CLI validates schema before writing.</p>
+    </div>
+    <div class="card backend">
+      <h4>@ Secrets Never in Config</h4>
+      <p>API keys stored in <code>~/.openclaw/.env</code>. Config uses <code>${VAR}</code> references. chmod 600.</p>
+    </div>
+    <div class="card http">
+      <h4># Atomic Providers</h4>
+      <p>Custom model providers set as complete JSON blocks via <code>--json</code>. No partial schema states.</p>
+    </div>
+    <div class="card config">
+      <h4>=&gt; Repeatable</h4>
+      <p>Same script for fresh install, disaster recovery, and fleet deployment. <code>--non-interactive</code> for CI.</p>
+    </div>
+  </div>
+</div>
+
+<!-- COMMANDS -->
+<div class="panel">
+  <div class="panel-title">[&gt;] COMMANDS</div>
+  <div class="cmd-grid">
+    <div class="cmd">
+      <code>bash scripts/openclaw-setup.sh</code>
+      <span>Interactive setup with prompts</span>
+    </div>
+    <div class="cmd">
+      <code>bash scripts/openclaw-setup.sh --non-interactive</code>
+      <span>CI/fleet mode using OC_* env vars</span>
+    </div>
+    <div class="cmd">
+      <code>bash scripts/openclaw-setup.sh --dry-run</code>
+      <span>Print commands without executing</span>
+    </div>
+    <div class="cmd">
+      <code>bash scripts/openclaw-setup.sh --skip-install</code>
+      <span>Skip npm install step</span>
+    </div>
+    <div class="cmd">
+      <code>for t in scripts/test/test-T*.sh; do bash "$t"; done</code>
+      <span>Run all 15 test suites</span>
+    </div>
+    <div class="cmd">
+      <code>openclaw config set &lt;path&gt; &lt;value&gt;</code>
+      <span>Safe config changes (NEVER edit JSON directly)</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
