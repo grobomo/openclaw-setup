@@ -182,7 +182,7 @@ interview_user() {
     1)
       PROVIDER_NAME="anthropic"
       PROVIDER_API="anthropic"
-      API_KEY_ENV_NAME="${PROVIDER_NAME^^}_API_KEY"
+      API_KEY_ENV_NAME="$(echo "$PROVIDER_NAME" | tr '[:lower:]' '[:upper:]')_API_KEY"
       if [[ "$NON_INTERACTIVE" == "true" ]]; then
         DEFAULT_MODEL="${OC_MODEL:-anthropic/claude-sonnet-4-6}"
         API_KEY_VALUE=""
@@ -255,12 +255,12 @@ interview_user() {
         AUTH_HEADER="${AUTH_HEADER:-true}"
         echo ""
         echo "API Key Storage:"
-        echo "  Stored in ~/.openclaw/.env as \${${PROVIDER_NAME^^}_API_KEY}"
+        echo "  Stored in ~/.openclaw/.env as \${$(echo "$PROVIDER_NAME" | tr '[:lower:]' '[:upper:]')_API_KEY}"
         echo ""
         read -rsp "Paste your API key (hidden): " API_KEY_VALUE
         echo ""
       fi
-      API_KEY_ENV_NAME="${PROVIDER_NAME^^}_API_KEY"
+      API_KEY_ENV_NAME="$(echo "$PROVIDER_NAME" | tr '[:lower:]' '[:upper:]')_API_KEY"
       ;;
     5)
       PROVIDER_NAME="ollama"
