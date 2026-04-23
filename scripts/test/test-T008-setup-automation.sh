@@ -7,7 +7,7 @@ SCRIPT="scripts/openclaw-setup.sh"
 [ -f "$SCRIPT" ] || { echo "FAIL: $SCRIPT missing"; exit 1; }
 
 PASS=0; FAIL=0
-check() { if grep -q "$1" "$SCRIPT"; then echo "PASS: has '$1'"; ((PASS++)); else echo "FAIL: missing '$1'"; ((FAIL++)); fi; }
+check() { if grep -q "$1" "$SCRIPT"; then echo "PASS: has '$1'"; PASS=$((PASS+1)); else echo "FAIL: missing '$1'"; FAIL=$((FAIL+1)); fi; }
 
 check "check_prereqs"
 check "install_openclaw"
@@ -20,7 +20,7 @@ check "chmod 600"
 check "dry-run"
 
 # Verify valid bash syntax
-bash -n "$SCRIPT" && { echo "PASS: valid bash syntax"; ((PASS++)); } || { echo "FAIL: syntax error"; ((FAIL++)); }
+bash -n "$SCRIPT" && { echo "PASS: valid bash syntax"; PASS=$((PASS+1)); } || { echo "FAIL: syntax error"; FAIL=$((FAIL+1)); }
 
 echo "---"
 echo "Results: $PASS passed, $FAIL failed"
