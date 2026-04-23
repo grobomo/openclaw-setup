@@ -75,3 +75,10 @@
 - [x] T035: Dry-run all 5 providers on clean Linux — Anthropic, OpenAI, OpenRouter, Custom, Ollama all pass
 - [x] T036: Test suites on EC2 — 79/81 pass (2 git-config tests expected to fail on fresh clone)
 - [x] T037: Teardown — stack deleted, keypair cleaned up, zero resources remaining
+
+## Phase 12: Final Audit & Expansion -- COMPLETE
+- [x] T038: Scan session logs for incomplete tangents — 5 .jsonl files scanned, no deferred work found
+- [x] T039: Run full test suite — 20/20 suites, 93/93 assertions pass
+- [x] T040: Verify live gateway health — pid 9806, port 18789, 401 on unauth (correct)
+- [x] T041: Final code review — EC2 scripts clean, no security issues, no hardcoded paths
+- [x] T042: README updated — assertion count 92→93, added EC2 E2E test docs and project structure
