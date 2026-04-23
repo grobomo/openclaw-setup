@@ -43,3 +43,9 @@
 - [x] T017: Atomic model defs via --json (prevents validation errors from field-by-field sets)
 - [x] T018: Non-interactive mode (--non-interactive flag, OC_* env vars for CI/fleet)
 - [x] T019: Clean up stale branches and worktree (4 branches deleted, 1 worktree removed)
+
+## Phase 8: Verification & Hardening
+- [ ] T020: Run full test suite end-to-end and verify all 15 suites pass
+- [ ] T021: Verify gateway still running and responding after config changes
+- [ ] T022: Add .gitignore for untracked files (.workflow-state.json, etc.)
+- [ ] T023: Verify marketplace PR #21 has no review issues
