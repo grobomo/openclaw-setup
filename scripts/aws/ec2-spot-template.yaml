@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Minimal spot instance for openclaw-setup E2E testing
+
+Parameters:
+  KeyPairName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: openclaw-e2e-key
+
+  InstanceType:
+    Type: String
+    Default: t3.micro
+
+  SpotMaxPrice:
+    Type: String
+    Default: '0.01'
+
+Mappings:
+  RegionAMI:
+    us-east-2:
+      AMI: ami-0d6d5a1f326b57cb0
+    us-east-1:
+      AMI: ami-0c614dee691cbbf37
+    us-west-2:
+      AMI: ami-093467ec28ae4fe03
+
+Resources:
+  SG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: openclaw-e2e SSH only
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: openclaw-e2e-sg
+
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: openclaw-e2e-lt
+      LaunchTemplateData:
+        InstanceType: !Ref InstanceType
+        ImageId: !FindInMap [RegionAMI, !Ref 'AWS::Region', AMI]
+        KeyName: !Ref KeyPairName
+        SecurityGroupIds:
+          - !GetAtt SG.GroupId
+        InstanceMarketOptions:
+          MarketType: spot
+          SpotOptions:
+            MaxPrice: !Ref SpotMaxPrice
+            SpotInstanceType: one-time
+        BlockDeviceMappings:
+          - DeviceName: /dev/sda1
+            Ebs:
+              VolumeSize: 8
+              VolumeType: gp3
+              DeleteOnTermination: true
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: openclaw-e2e-test
+              - Key: Project
+                Value: openclaw-setup
+        UserData:
+          Fn::Base64: |
+            #!/bin/bash -xe
+            exec > /var/log/openclaw-e2e-init.log 2>&1
+
+            apt-get update -y
+            apt-get install -y ca-certificates curl git unzip
+
+            # Install Node.js 24 via fnm for the default user
+            DEFUSER=$(getent passwd 1000 | cut -d: -f1)
+            DEFHOME=$(getent passwd 1000 | cut -d: -f6)
+            su - "$DEFUSER" -c 'curl -fsSL https://fnm.vercel.app/install | bash'
+            su - "$DEFUSER" -c 'export PATH="$HOME/.local/share/fnm:$PATH" && eval "$(fnm env)" && fnm install 24 && fnm default 24'
+
+            # Make node available system-wide
+            NODE_DIR=$(find "$DEFHOME/.local/share/fnm/node-versions" -maxdepth 2 -name bin -type d 2>/dev/null | head -1)
+            if [[ -n "$NODE_DIR" ]]; then
+              ln -sf "$NODE_DIR/node" /usr/local/bin/node
+              ln -sf "$NODE_DIR/npm" /usr/local/bin/npm
+              ln -sf "$NODE_DIR/npx" /usr/local/bin/npx
+            fi
+
+            # Signal ready
+            echo "READY" > /tmp/cloud-init-done
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+
+Outputs:
+  InstanceId:
+    Value: !Ref Instance
+  PublicIP:
+    Value: !GetAtt Instance.PublicIp
+  KeyName:
+    Value: !Ref KeyPairName
+  SSHCommand:
+    Value: !Sub 'ssh -i ~/.ssh/${KeyPairName}.pem ubuntu@${Instance.PublicIp}'
