@@ -34,8 +34,8 @@
 - [x] T010: Verify gateway running (pid 3084), config valid, model trendmicro-aiendpoint/claude-4.6-sonnet
 - [x] T011: Merge to main, push to grobomo/openclaw-setup
 
-## Phase 7: Polish & Publish
-- [ ] T012: Publish skill to grobomo marketplace
+## Phase 7: Polish & Publish -- COMPLETE
+- [x] T012: Publish to grobomo marketplace (PR #21: grobomo/claude-code-skills) + README + explainer HTML
 - [x] T013: Add Slack channel IDs with per-channel requireMention (4 channels configured)
 - [x] T014: Signal channel support in setup script (no live account, deferred)
 - [x] T015: Enable plugins -- coconut-guardrails, hook-runner-gates, memory-core
