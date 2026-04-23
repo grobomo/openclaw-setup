@@ -69,3 +69,9 @@
 - [x] T031: Gateway verified — restarted (pid 7166), port 18789, 401 on unauthenticated (correct)
 - [x] T032: Code review — fix bash 3.2 empty array expansion (CHANNEL_LIST), add compat test assertion
 - [x] T033: README updated — test counts 15→20 suites, 83→92 assertions
+
+## Phase 11: EC2 E2E Test
+- [x] T034: Launch EC2 spot instance (t3.micro, Ubuntu 24.04, NodeSource Node.js 24)
+- [x] T035: Dry-run all 5 providers on clean Linux — Anthropic, OpenAI, OpenRouter, Custom, Ollama all pass
+- [x] T036: Test suites on EC2 — 79/81 pass (2 git-config tests expected to fail on fresh clone)
+- [x] T037: Teardown — stack deleted, keypair cleaned up, zero resources remaining

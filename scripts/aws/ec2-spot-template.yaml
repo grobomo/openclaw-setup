@@ -71,21 +71,11 @@ Resources:
             exec > /var/log/openclaw-e2e-init.log 2>&1
 
             apt-get update -y
-            apt-get install -y ca-certificates curl git unzip
+            apt-get install -y ca-certificates curl git
 
-            # Install Node.js 24 via fnm for the default user
-            DEFUSER=$(getent passwd 1000 | cut -d: -f1)
-            DEFHOME=$(getent passwd 1000 | cut -d: -f6)
-            su - "$DEFUSER" -c 'curl -fsSL https://fnm.vercel.app/install | bash'
-            su - "$DEFUSER" -c 'export PATH="$HOME/.local/share/fnm:$PATH" && eval "$(fnm env)" && fnm install 24 && fnm default 24'
-
-            # Make node available system-wide
-            NODE_DIR=$(find "$DEFHOME/.local/share/fnm/node-versions" -maxdepth 2 -name bin -type d 2>/dev/null | head -1)
-            if [[ -n "$NODE_DIR" ]]; then
-              ln -sf "$NODE_DIR/node" /usr/local/bin/node
-              ln -sf "$NODE_DIR/npm" /usr/local/bin/npm
-              ln -sf "$NODE_DIR/npx" /usr/local/bin/npx
-            fi
+            # Install Node.js 24 via NodeSource apt repo (system-wide)
+            curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
+            apt-get install -y nodejs
 
             # Signal ready
             echo "READY" > /tmp/cloud-init-done
