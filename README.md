@@ -35,9 +35,10 @@ bash scripts/openclaw-setup.sh
 | `skill/SKILL.md` | Claude Code skill definition for marketplace |
 | `docs/research.md` | Consolidated research from 7 sources (official docs, bugs, guides) |
 | `docs/setup-log.md` | Timestamped log of every setup command with root cause analysis |
-| `scripts/test/test-T*.sh` | 20 test suites (93 assertions) covering all tasks |
+| `scripts/test/test-T*.sh` | 20 test suites (94 assertions) covering all tasks |
 | `scripts/aws/ec2-test.sh` | EC2 spot instance launcher for E2E testing on clean Linux |
 | `scripts/aws/ec2-spot-template.yaml` | CloudFormation template (t3.micro, Ubuntu 24.04) |
+| `scripts/aws/mac-test.sh` | macOS E2E test runner via SSM (dedicated Mac instance) |
 
 ## Usage
 
@@ -86,6 +87,18 @@ bash scripts/aws/ec2-test.sh teardown   # Delete everything
 ```
 
 Requires AWS CLI configured. Uses t3.micro spot in us-east-2 by default.
+
+### E2E test on macOS
+
+Runs tests on a dedicated Mac instance via SSM (no SSH key needed):
+
+```bash
+bash scripts/aws/mac-test.sh info       # Show instance details + environment
+bash scripts/aws/mac-test.sh test       # Run all dry-runs + test suites
+bash scripts/aws/mac-test.sh report     # Same as test, saves report to reports/
+```
+
+Validated on macOS 15.7.3 (arm64) with Bash 3.2.57.
 
 ## Why Use It
 

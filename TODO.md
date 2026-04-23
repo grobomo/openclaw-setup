@@ -82,3 +82,9 @@
 - [x] T040: Verify live gateway health — pid 9806, port 18789, 401 on unauth (correct)
 - [x] T041: Final code review — EC2 scripts clean, no security issues, no hardcoded paths
 - [x] T042: README updated — assertion count 92→93, added EC2 E2E test docs and project structure
+
+## Phase 13: macOS E2E Test (AWS Mac Instance) -- COMPLETE
+- [x] T049: SSM access to mac2.metal verified — macOS 15.7.3, arm64, Bash 3.2.57, Node.js installed via binary
+- [x] T050: All 5 provider dry-runs pass on macOS Bash 3.2.57 (fixed ${VAR^^} → tr uppercase)
+- [x] T051: 80/82 test assertions pass (2 git-config expected failures on fresh clone)
+- [x] T052: Test report saved to reports/macos-e2e-*.log with full output
