@@ -75,12 +75,11 @@ upload_and_run() {
   local COMMANDS_JSON
   COMMANDS_JSON=$(python3 -c "
 import json, sys
-b64 = sys.argv[1]
+b64, branch = sys.argv[1], sys.argv[2]
 cmds = [
     'echo ' + b64 + ' | base64 -d > /tmp/openclaw-mac-test.sh',
     'chmod +x /tmp/openclaw-mac-test.sh',
-    'export OC_TEST_BRANCH=""" + sys.argv[2] + """',
-    'bash /tmp/openclaw-mac-test.sh',
+    'export OC_TEST_BRANCH=' + branch + ' && bash /tmp/openclaw-mac-test.sh',
     'rm -f /tmp/openclaw-mac-test.sh'
 ]
 print(json.dumps(cmds))
