@@ -15,7 +15,7 @@
 #
 # Non-interactive mode (--non-interactive):
 #   Reads all config from env vars instead of prompting. Required env vars:
-#     OC_PROVIDER       - Provider choice: 1=anthropic, 4=custom, 5=ollama (default: 1)
+#     OC_PROVIDER       - Provider choice: 1=anthropic, 2=openai, 3=openrouter, 4=custom, 5=ollama (default: 1)
 #     OC_MODEL          - Default model (default: anthropic/claude-sonnet-4-6)
 #     OC_CHANNELS       - Comma-separated channels or "none" (default: none)
 #     OC_PORT           - Gateway port (default: 18789)
@@ -24,6 +24,8 @@
 #     OC_BASE_URL       - Provider base URL
 #     OC_MODEL_ID       - Model ID
 #     OC_AUTH_HEADER    - Use auth header (default: true)
+#     OC_CONTEXT_WINDOW - Model context window size (default: 200000)
+#     OC_MAX_TOKENS     - Model max output tokens (default: 64000)
 #   API keys must be pre-set in ~/.openclaw/.env
 #
 # Secrets are stored in ~/.openclaw/.env (chmod 600), never in config files.
@@ -67,18 +69,28 @@ err() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
 step() { echo -e "\n${BLUE}=== $* ===${NC}"; }
 
 log_cmd() {
-  # Log a command to the setup log file and optionally execute it
-  local cmd="$1"
+  # Log and execute a command. Arguments passed as separate words — no eval.
   local ts
   ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   if [[ -n "$SETUP_LOG" ]]; then
-    echo "[$ts] $cmd" >> "$SETUP_LOG"
+    echo "[$ts] $*" >> "$SETUP_LOG"
   fi
   if [[ "$DRY_RUN" == "true" ]]; then
-    echo "  [dry-run] $cmd"
+    echo "  [dry-run] $*"
   else
-    eval "$cmd"
+    "$@"
   fi
+}
+
+# --- Helpers ---
+# Store or update a key=value in the .env file (dedup safe)
+env_set() {
+  local key="$1" value="$2"
+  if [[ -f "$OPENCLAW_ENV" ]]; then
+    grep -v "^${key}=" "$OPENCLAW_ENV" > "${OPENCLAW_ENV}.tmp" 2>/dev/null || true
+    mv "${OPENCLAW_ENV}.tmp" "$OPENCLAW_ENV"
+  fi
+  echo "${key}=${value}" >> "$OPENCLAW_ENV"
 }
 
 # --- Prerequisites ---
@@ -135,7 +147,7 @@ install_openclaw() {
   fi
 
   log "Installing OpenClaw via npm..."
-  log_cmd "npm install -g openclaw@latest"
+  log_cmd npm install -g openclaw@latest
   log "Installed: $(openclaw --version)"
 }
 
@@ -184,6 +196,43 @@ interview_user() {
         echo "  NEVER paste keys into openclaw.json directly"
         echo ""
         read -rsp "Paste your API key (hidden): " API_KEY_VALUE
+        echo ""
+      fi
+      ;;
+    2)
+      PROVIDER_NAME="openai"
+      PROVIDER_API="openai-completions"
+      API_KEY_ENV_NAME="OPENAI_API_KEY"
+      if [[ "$NON_INTERACTIVE" == "true" ]]; then
+        DEFAULT_MODEL="${OC_MODEL:-openai/gpt-4o}"
+        API_KEY_VALUE=""
+      else
+        read -rp "Default model [openai/gpt-4o]: " DEFAULT_MODEL
+        DEFAULT_MODEL="${DEFAULT_MODEL:-openai/gpt-4o}"
+        echo ""
+        echo "API Key Storage:"
+        echo "  Your API key will be stored in ~/.openclaw/.env (chmod 600)"
+        echo ""
+        read -rsp "Paste your OpenAI API key (hidden): " API_KEY_VALUE
+        echo ""
+      fi
+      ;;
+    3)
+      PROVIDER_NAME="openrouter"
+      PROVIDER_API="openai-completions"
+      PROVIDER_BASE_URL="https://openrouter.ai/api/v1"
+      API_KEY_ENV_NAME="OPENROUTER_API_KEY"
+      if [[ "$NON_INTERACTIVE" == "true" ]]; then
+        DEFAULT_MODEL="${OC_MODEL:-openrouter/anthropic/claude-sonnet-4-6}"
+        API_KEY_VALUE=""
+      else
+        read -rp "Default model [openrouter/anthropic/claude-sonnet-4-6]: " DEFAULT_MODEL
+        DEFAULT_MODEL="${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4-6}"
+        echo ""
+        echo "API Key Storage:"
+        echo "  Your API key will be stored in ~/.openclaw/.env (chmod 600)"
+        echo ""
+        read -rsp "Paste your OpenRouter API key (hidden): " API_KEY_VALUE
         echo ""
       fi
       ;;
@@ -261,12 +310,7 @@ store_secrets() {
 
   # Create or update .env file
   if [[ -n "${API_KEY_VALUE:-}" && -n "${API_KEY_ENV_NAME:-}" ]]; then
-    # Remove old entry if exists, add new
-    if [[ -f "$OPENCLAW_ENV" ]]; then
-      grep -v "^${API_KEY_ENV_NAME}=" "$OPENCLAW_ENV" > "${OPENCLAW_ENV}.tmp" 2>/dev/null || true
-      mv "${OPENCLAW_ENV}.tmp" "$OPENCLAW_ENV"
-    fi
-    echo "${API_KEY_ENV_NAME}=${API_KEY_VALUE}" >> "$OPENCLAW_ENV"
+    env_set "$API_KEY_ENV_NAME" "$API_KEY_VALUE"
     log "Stored $API_KEY_ENV_NAME in $OPENCLAW_ENV"
   fi
 
@@ -289,8 +333,8 @@ store_secrets() {
           echo ""
           read -rsp "Slack App Token (xapp-..., hidden): " SLACK_APP
           echo ""
-          echo "SLACK_BOT_TOKEN=${SLACK_BOT}" >> "$OPENCLAW_ENV"
-          echo "SLACK_APP_TOKEN=${SLACK_APP}" >> "$OPENCLAW_ENV"
+          env_set "SLACK_BOT_TOKEN" "$SLACK_BOT"
+          env_set "SLACK_APP_TOKEN" "$SLACK_APP"
           log "Stored Slack tokens"
           ;;
         telegram)
@@ -302,7 +346,7 @@ store_secrets() {
           echo ""
           read -rsp "Telegram Bot Token (hidden): " TG_TOKEN
           echo ""
-          echo "TELEGRAM_BOT_TOKEN=${TG_TOKEN}" >> "$OPENCLAW_ENV"
+          env_set "TELEGRAM_BOT_TOKEN" "$TG_TOKEN"
           log "Stored Telegram token"
           ;;
         discord)
@@ -314,7 +358,7 @@ store_secrets() {
           echo ""
           read -rsp "Discord Bot Token (hidden): " DC_TOKEN
           echo ""
-          echo "DISCORD_BOT_TOKEN=${DC_TOKEN}" >> "$OPENCLAW_ENV"
+          env_set "DISCORD_BOT_TOKEN" "$DC_TOKEN"
           log "Stored Discord token"
           ;;
         signal)
@@ -336,94 +380,87 @@ configure_openclaw() {
   step "Configuring OpenClaw"
 
   # Gateway
-  log_cmd "openclaw config set gateway.mode local"
-  log_cmd "openclaw config set gateway.bind loopback"
-  log_cmd "openclaw config set gateway.port $GW_PORT"
-  log_cmd "openclaw config set gateway.auth.mode token"
-  log_cmd "openclaw config set gateway.http.endpoints.chatCompletions.enabled true"
+  log_cmd openclaw config set gateway.mode local
+  log_cmd openclaw config set gateway.bind loopback
+  log_cmd openclaw config set gateway.port "$GW_PORT"
+  log_cmd openclaw config set gateway.auth.mode token
+  log_cmd openclaw config set gateway.http.endpoints.chatCompletions.enabled true
 
   # Model provider
   case "$MODEL_CHOICE" in
     1)
-      log_cmd "openclaw config set agents.defaults.model.primary '$DEFAULT_MODEL'"
+      log_cmd openclaw config set agents.defaults.model.primary "$DEFAULT_MODEL"
+      ;;
+    2)
+      # OpenAI: simple provider with API key from env
+      log_cmd openclaw config set models.mode merge
+      log_cmd openclaw config set models.providers.openai --json \
+        "{\"apiKey\":\"\${OPENAI_API_KEY}\",\"api\":\"openai-completions\"}"
+      log_cmd openclaw config set agents.defaults.model.primary "$DEFAULT_MODEL"
+      ;;
+    3)
+      # OpenRouter: OpenAI-compatible with custom base URL
+      log_cmd openclaw config set models.mode merge
+      log_cmd openclaw config set models.providers.openrouter --json \
+        "{\"baseUrl\":\"${PROVIDER_BASE_URL}\",\"apiKey\":\"\${OPENROUTER_API_KEY}\",\"api\":\"openai-completions\",\"authHeader\":true}"
+      log_cmd openclaw config set agents.defaults.model.primary "$DEFAULT_MODEL"
       ;;
     4)
       # T017: Set provider atomically with --json to avoid validation errors
-      # Setting fields one-by-one fails because the schema requires all fields together
-      log_cmd "openclaw config set models.mode merge"
-      log_cmd "openclaw config set models.providers.${PROVIDER_NAME} --json '{
-        \"baseUrl\": \"${PROVIDER_BASE_URL}\",
-        \"apiKey\": \"\${${API_KEY_ENV_NAME}}\",
-        \"api\": \"${PROVIDER_API}\",
-        \"authHeader\": ${AUTH_HEADER},
-        \"models\": [{
-          \"id\": \"${DEFAULT_MODEL_ID}\",
-          \"name\": \"${DEFAULT_MODEL_ID}\",
-          \"reasoning\": true,
-          \"input\": [\"text\", \"image\"],
-          \"contextWindow\": ${OC_CONTEXT_WINDOW:-200000},
-          \"maxTokens\": ${OC_MAX_TOKENS:-64000}
-        }]
-      }'"
-      log_cmd "openclaw config set agents.defaults.model.primary '$DEFAULT_MODEL'"
+      local ctx_window="${OC_CONTEXT_WINDOW:-200000}"
+      local max_tokens="${OC_MAX_TOKENS:-64000}"
+      log_cmd openclaw config set models.mode merge
+      log_cmd openclaw config set "models.providers.${PROVIDER_NAME}" --json \
+        "{\"baseUrl\":\"${PROVIDER_BASE_URL}\",\"apiKey\":\"\${${API_KEY_ENV_NAME}}\",\"api\":\"${PROVIDER_API}\",\"authHeader\":${AUTH_HEADER},\"models\":[{\"id\":\"${DEFAULT_MODEL_ID}\",\"name\":\"${DEFAULT_MODEL_ID}\",\"reasoning\":true,\"input\":[\"text\",\"image\"],\"contextWindow\":${ctx_window},\"maxTokens\":${max_tokens}}]}"
+      log_cmd openclaw config set agents.defaults.model.primary "$DEFAULT_MODEL"
       ;;
     5)
       # T017: Set Ollama provider atomically
-      log_cmd "openclaw config set models.mode merge"
-      log_cmd "openclaw config set models.providers.ollama --json '{
-        \"baseUrl\": \"${PROVIDER_BASE_URL}\",
-        \"api\": \"${PROVIDER_API}\",
-        \"models\": [{
-          \"id\": \"${DEFAULT_MODEL_ID}\",
-          \"name\": \"${DEFAULT_MODEL_ID}\",
-          \"reasoning\": false,
-          \"input\": [\"text\"],
-          \"contextWindow\": 128000,
-          \"maxTokens\": 32000
-        }]
-      }'"
-      log_cmd "openclaw config set agents.defaults.model.primary '$DEFAULT_MODEL'"
+      log_cmd openclaw config set models.mode merge
+      log_cmd openclaw config set models.providers.ollama --json \
+        "{\"baseUrl\":\"${PROVIDER_BASE_URL}\",\"api\":\"${PROVIDER_API}\",\"models\":[{\"id\":\"${DEFAULT_MODEL_ID}\",\"name\":\"${DEFAULT_MODEL_ID}\",\"reasoning\":false,\"input\":[\"text\"],\"contextWindow\":128000,\"maxTokens\":32000}]}"
+      log_cmd openclaw config set agents.defaults.model.primary "$DEFAULT_MODEL"
       ;;
   esac
 
   # Agent defaults
-  log_cmd "openclaw config set agents.defaults.timeoutSeconds 300"
-  log_cmd "openclaw config set agents.defaults.compaction.mode safeguard"
-  log_cmd "openclaw config set agents.defaults.compaction.notifyUser true"
+  log_cmd openclaw config set agents.defaults.timeoutSeconds 300
+  log_cmd openclaw config set agents.defaults.compaction.mode safeguard
+  log_cmd openclaw config set agents.defaults.compaction.notifyUser true
 
   # Channels
   for ch in "${CHANNEL_LIST[@]}"; do
     ch="$(echo "$ch" | xargs)"
     case "$ch" in
       slack)
-        log_cmd "openclaw config set channels.slack.enabled true"
-        log_cmd "openclaw config set channels.slack.mode socket"
-        log_cmd "openclaw config set channels.slack.dmPolicy allowlist"
-        log_cmd "openclaw config set channels.slack.botToken '\${SLACK_BOT_TOKEN}'"
-        log_cmd "openclaw config set channels.slack.appToken '\${SLACK_APP_TOKEN}'"
-        log_cmd "openclaw config set channels.slack.groupPolicy mention"
+        log_cmd openclaw config set channels.slack.enabled true
+        log_cmd openclaw config set channels.slack.mode socket
+        log_cmd openclaw config set channels.slack.dmPolicy allowlist
+        log_cmd openclaw config set channels.slack.botToken '${SLACK_BOT_TOKEN}'
+        log_cmd openclaw config set channels.slack.appToken '${SLACK_APP_TOKEN}'
+        log_cmd openclaw config set channels.slack.groupPolicy mention
         ;;
       telegram)
-        log_cmd "openclaw config set channels.telegram.enabled true"
-        log_cmd "openclaw config set channels.telegram.token '\${TELEGRAM_BOT_TOKEN}'"
-        log_cmd "openclaw config set channels.telegram.dmPolicy pairing"
+        log_cmd openclaw config set channels.telegram.enabled true
+        log_cmd openclaw config set channels.telegram.token '${TELEGRAM_BOT_TOKEN}'
+        log_cmd openclaw config set channels.telegram.dmPolicy pairing
         ;;
       discord)
-        log_cmd "openclaw config set channels.discord.enabled true"
-        log_cmd "openclaw config set channels.discord.token '\${DISCORD_BOT_TOKEN}'"
-        log_cmd "openclaw config set channels.discord.dmPolicy pairing"
+        log_cmd openclaw config set channels.discord.enabled true
+        log_cmd openclaw config set channels.discord.token '${DISCORD_BOT_TOKEN}'
+        log_cmd openclaw config set channels.discord.dmPolicy pairing
         ;;
       signal)
-        log_cmd "openclaw config set channels.signal.enabled true"
-        log_cmd "openclaw config set channels.signal.dmPolicy pairing"
-        log_cmd "openclaw config set channels.signal.autoStart true"
+        log_cmd openclaw config set channels.signal.enabled true
+        log_cmd openclaw config set channels.signal.dmPolicy pairing
+        log_cmd openclaw config set channels.signal.autoStart true
         ;;
     esac
   done
 
   # Security hardening
-  log_cmd "openclaw config set logging.level info"
-  log_cmd "openclaw config set logging.redactSensitive off"
+  log_cmd openclaw config set logging.level info
+  log_cmd openclaw config set logging.redactSensitive on
 }
 
 # --- Start & Verify ---
@@ -433,15 +470,15 @@ start_and_verify() {
   # Auth Claude CLI if using Anthropic
   if [[ "$MODEL_CHOICE" == "1" ]]; then
     log "Setting up Claude CLI auth for OpenClaw..."
-    log_cmd "openclaw models auth login --provider anthropic --method cli --set-default"
+    log_cmd openclaw models auth login --provider anthropic --method cli --set-default
   fi
 
   # Fix any issues found by doctor
   log "Running doctor --fix..."
-  log_cmd "openclaw doctor --fix" || true
+  log_cmd openclaw doctor --fix || true
 
   # Start gateway
-  log_cmd "openclaw gateway start"
+  log_cmd openclaw gateway start
 
   # Wait for gateway to be ready
   log "Waiting for gateway..."
@@ -455,12 +492,12 @@ start_and_verify() {
   done
 
   step "Verification"
-  log_cmd "openclaw gateway status"
-  log_cmd "openclaw doctor"
-  log_cmd "openclaw config validate"
+  log_cmd openclaw gateway status
+  log_cmd openclaw doctor
+  log_cmd openclaw config validate
 
   if [[ ${#CHANNEL_LIST[@]} -gt 0 ]]; then
-    log_cmd "openclaw channel list"
+    log_cmd openclaw channel list
   fi
 }
 
@@ -494,6 +531,7 @@ post_setup() {
 # --- Main ---
 main() {
   log "OpenClaw Setup Script v1.0"
+  mkdir -p "$PROJECT_DIR/docs"
   SETUP_LOG="$PROJECT_DIR/docs/setup-log-$(date +%Y%m%d-%H%M%S).log"
   log "Logging commands to: $SETUP_LOG"
 

@@ -49,3 +49,10 @@
 - [x] T021: Gateway verified running (pid 5138), config valid after all changes
 - [x] T022: Add .gitignore for workflow state, worktrees, setup logs
 - [x] T023: Marketplace PR #21 merged -- 4/4 CI checks passed (secret scan, structure, LF, quality gate)
+
+## Phase 9: Session Log Audit & E2E Validation
+- [x] T024: Scan previous session logs for deferred/skipped/temporary work — no tangents found
+- [x] T025: Run full test suite E2E — 15/15 suites, 78/78 assertions, gateway healthy (pid 5138)
+- [x] T026: Code review — 6 fixes: eval→direct exec, add OpenAI/OpenRouter providers, redactSensitive on, env_set dedup helper, docs/ mkdir, document OC_CONTEXT_WINDOW/OC_MAX_TOKENS
+- [ ] T027: Verify setup script works end-to-end on a clean WSL environment (dry-run mode)
+- [ ] T028: Zoom out — integration with other grobomo projects, fleet deployment readiness
