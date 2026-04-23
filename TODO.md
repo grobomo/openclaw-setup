@@ -48,4 +48,4 @@
 - [x] T020: Run full test suite -- 15/15 suites, 78 assertions, 0 failures
 - [x] T021: Gateway verified running (pid 5138), config valid after all changes
 - [x] T022: Add .gitignore for workflow state, worktrees, setup logs
-- [ ] T023: Verify marketplace PR #21 has no review issues
+- [x] T023: Marketplace PR #21 merged -- 4/4 CI checks passed (secret scan, structure, LF, quality gate)
