@@ -35,7 +35,9 @@ bash scripts/openclaw-setup.sh
 | `skill/SKILL.md` | Claude Code skill definition for marketplace |
 | `docs/research.md` | Consolidated research from 7 sources (official docs, bugs, guides) |
 | `docs/setup-log.md` | Timestamped log of every setup command with root cause analysis |
-| `scripts/test/test-T*.sh` | 20 test suites (92 assertions) covering all tasks |
+| `scripts/test/test-T*.sh` | 20 test suites (93 assertions) covering all tasks |
+| `scripts/aws/ec2-test.sh` | EC2 spot instance launcher for E2E testing on clean Linux |
+| `scripts/aws/ec2-spot-template.yaml` | CloudFormation template (t3.micro, Ubuntu 24.04) |
 
 ## Usage
 
@@ -73,6 +75,18 @@ Prints every command without executing.
 for t in scripts/test/test-T*.sh; do bash "$t"; done
 ```
 
+### E2E test on EC2
+
+Launches a spot instance, clones the repo, and runs all tests on clean Ubuntu 24.04:
+
+```bash
+bash scripts/aws/ec2-test.sh launch     # Create keypair + spot instance (~$0.003/hr)
+bash scripts/aws/ec2-test.sh test       # Run dry-run + test suites remotely
+bash scripts/aws/ec2-test.sh teardown   # Delete everything
+```
+
+Requires AWS CLI configured. Uses t3.micro spot in us-east-2 by default.
+
 ## Why Use It
 
 - **No JSON corruption** -- all config via `openclaw config set`, never direct edits
@@ -93,6 +107,9 @@ openclaw-setup/
     setup-log.md              # Timestamped setup commands + root cause
   scripts/
     openclaw-setup.sh         # Main setup script
+    aws/
+      ec2-test.sh             # EC2 spot launcher for E2E testing
+      ec2-spot-template.yaml  # CloudFormation template
     test/
       test-T001-*.sh          # Project scaffolding tests
       test-T002-*.sh          # Secret scan tests
