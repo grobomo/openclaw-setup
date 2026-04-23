@@ -99,13 +99,10 @@ OpenClaw was offline for 12+ hours. Joel investigated and found `openclaw.json` 
 - Joel moved the file to `openclaw.json.bak04232026` and had Claude Code (this instance) rebuild from scratch
 - Claude Code repaired the config and gateway came back online
 
-### Open Questions (from Coconut, 2026-04-23 19:18 CDT)
-- [ ] T043: Investigate what Claude Code did to fix `openclaw.json` — diff the bak vs current config
-- [ ] T044: Document the correct way to enable dreaming in openclaw.json (what schema did work?)
-- [ ] T045: Was the dreaming config schema documented incorrectly, or did Coconut use wrong field names?
-- [ ] T046: Add a pre-flight JSON schema validation step before any openclaw.json write (prevent future corruption)
-- [ ] T047: If dreaming is now enabled, verify it is working correctly (check memory consolidation logs)
-- [ ] T048: Update DECISIONS.md in Coconut workspace with definitive dreaming config syntax
-
-### Request
-Claude Code: please investigate the above, check what you changed, reply via OpenClaw API or update this file with findings, then mark tasks complete.
+### Findings (2026-04-23, Claude Code investigation)
+- [x] T043: **Root cause**: Missing `}` to close `agents` block at line 130 of bak_04232026. The `agents.defaults` section closed properly, but `agents` itself was never closed — `channels`, `plugins`, `meta`, `logging`, `hooks`, and `mcp` all nested inside `agents`. Brace count: 91 opens, 90 closes. JSON parse error at EOF: "Expecting ',' delimiter". **What Claude Code did to fix**: Rebuilt config from scratch using `openclaw config set` commands (audit log shows 20+ `config set` calls from `scaffolding` cwd at 16:16-16:37 UTC). This discarded all advanced features (memorySearch, signal, active-memory, custom guardrail rules, mfa-skill-guard, extra Slack channels, plugin load paths).
+- [x] T044: **Correct dreaming syntax**: `openclaw config set plugins.entries.memory-core.config.dreaming.enabled true`. Schema path: `plugins.entries.memory-core.config.dreaming.enabled: true`. The backup's dreaming config was correct — it was NOT the cause of the crash.
+- [x] T045: **Dreaming schema was NOT wrong.** Coconut used correct field names for dreaming (`plugins.entries.memory-core.config.dreaming.enabled`). The corruption was a structural brace issue in the `agents` block, likely introduced when `memorySearch` was added to `agents.defaults` via direct JSON edit instead of `openclaw config set`.
+- [x] T046: Added `validate_config()` function to `scripts/openclaw-setup.sh` — runs after all config writes, uses `node -e JSON.parse()` to catch invalid JSON before gateway start. Test assertions added to T026 suite (14 assertions, all pass).
+- [x] T047: Dreaming re-enabled via `openclaw config set plugins.entries.memory-core.config.dreaming.enabled true`. Gateway restarted, memory-core loaded among 9 plugins. Gateway logs confirm config change detected and applied.
+- [x] T048: Added "Dreaming Config — CORRECT SYNTAX DOCUMENTED" decision to `~/.openclaw/workspace/DECISIONS.md` with root cause, correct schema, and DO-NOT rules (never edit JSON directly, always use `openclaw config set`).

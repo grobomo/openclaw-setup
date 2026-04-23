@@ -35,7 +35,7 @@ bash scripts/openclaw-setup.sh
 | `skill/SKILL.md` | Claude Code skill definition for marketplace |
 | `docs/research.md` | Consolidated research from 7 sources (official docs, bugs, guides) |
 | `docs/setup-log.md` | Timestamped log of every setup command with root cause analysis |
-| `scripts/test/test-T*.sh` | 20 test suites (94 assertions) covering all tasks |
+| `scripts/test/test-T*.sh` | 20 test suites (96 assertions) covering all tasks |
 | `scripts/aws/ec2-test.sh` | EC2 spot instance launcher for E2E testing on clean Linux |
 | `scripts/aws/ec2-spot-template.yaml` | CloudFormation template (t3.micro, Ubuntu 24.04) |
 | `scripts/aws/mac-test.sh` | macOS E2E test runner via SSM (dedicated Mac instance) |

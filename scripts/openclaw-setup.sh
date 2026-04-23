@@ -463,6 +463,32 @@ configure_openclaw() {
   # Security hardening
   log_cmd openclaw config set logging.level info
   log_cmd openclaw config set logging.redactSensitive on
+
+  # T046: Pre-flight JSON validation — catch brace mismatches before gateway start
+  validate_config
+}
+
+# --- Config Validation (T046) ---
+validate_config() {
+  local config_file="$OPENCLAW_HOME/openclaw.json"
+  if [[ "$DRY_RUN" == "true" ]]; then
+    log "  [dry-run] validate_config $config_file"
+    return 0
+  fi
+  if [[ ! -f "$config_file" ]]; then
+    return 0
+  fi
+
+  # Use node (already required) to validate JSON structure
+  if ! node -e "JSON.parse(require('fs').readFileSync('$config_file','utf8'))" 2>/dev/null; then
+    err "openclaw.json has invalid JSON structure!"
+    err "This can happen when config edits introduce mismatched braces."
+    err "Backup at: ${config_file}.bak"
+    err "Fix: restore from backup, then use 'openclaw config set' (not direct edits)"
+    return 1
+  fi
+
+  log "Config JSON structure validated"
 }
 
 # --- Start & Verify ---

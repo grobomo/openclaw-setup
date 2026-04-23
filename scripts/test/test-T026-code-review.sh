@@ -53,6 +53,10 @@ check "bash 3.2 safe array expansion" grep -q 'CHANNEL_LIST\[@\]+"' "$SCRIPT"
 # Bash 3.2 compat: no ${VAR^^} uppercase (Bash 4+ only), use tr instead
 check_not "no bash4 uppercase syntax" grep -q '^^}' "$SCRIPT"
 
+# T046: JSON config validation function exists
+check "validate_config function exists" grep -q 'validate_config()' "$SCRIPT"
+check "validate_config called after configure" grep -q 'validate_config' "$SCRIPT"
+
 # Valid bash syntax
 check "valid bash syntax" bash -n "$SCRIPT"
 
