@@ -3,7 +3,7 @@
 # Cross-platform: macOS, Linux, WSL2 (Windows users run this in WSL)
 #
 # Usage:
-#   bash scripts/openclaw-setup.sh [--config config.env] [--skip-install] [--dry-run]
+#   bash scripts/openclaw-setup.sh [--config config.env] [--skip-install] [--dry-run] [--non-interactive]
 #
 # This script:
 # 1. Checks prerequisites (Node.js, platform)
@@ -12,6 +12,19 @@
 # 4. Generates config via `openclaw config set` (never direct JSON edits)
 # 5. Starts gateway and verifies
 # 6. Logs every command to setup-log.md
+#
+# Non-interactive mode (--non-interactive):
+#   Reads all config from env vars instead of prompting. Required env vars:
+#     OC_PROVIDER       - Provider choice: 1=anthropic, 4=custom, 5=ollama (default: 1)
+#     OC_MODEL          - Default model (default: anthropic/claude-sonnet-4-6)
+#     OC_CHANNELS       - Comma-separated channels or "none" (default: none)
+#     OC_PORT           - Gateway port (default: 18789)
+#   For custom providers (OC_PROVIDER=4):
+#     OC_PROVIDER_NAME  - Short name (default: custom)
+#     OC_BASE_URL       - Provider base URL
+#     OC_MODEL_ID       - Model ID
+#     OC_AUTH_HEADER    - Use auth header (default: true)
+#   API keys must be pre-set in ~/.openclaw/.env
 #
 # Secrets are stored in ~/.openclaw/.env (chmod 600), never in config files.
 # Config changes are tracked via local git commits.
@@ -24,6 +37,7 @@ OPENCLAW_ENV="$OPENCLAW_HOME/.env"
 SETUP_LOG=""
 DRY_RUN=false
 SKIP_INSTALL=false
+NON_INTERACTIVE=false
 CONFIG_FILE=""
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -41,6 +55,7 @@ while [[ $# -gt 0 ]]; do
     --config) CONFIG_FILE="$2"; shift 2 ;;
     --skip-install) SKIP_INSTALL=true; shift ;;
     --dry-run) DRY_RUN=true; shift ;;
+    --non-interactive) NON_INTERACTIVE=true; shift ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
@@ -109,6 +124,10 @@ install_openclaw() {
     local version
     version="$(openclaw --version 2>/dev/null || echo 'unknown')"
     log "OpenClaw already installed: $version"
+    if [[ "$NON_INTERACTIVE" == "true" ]]; then
+      log "Non-interactive: skipping reinstall prompt"
+      return 0
+    fi
     read -rp "Reinstall/update? [y/N]: " choice
     if [[ "$choice" != "y" && "$choice" != "Y" ]]; then
       return 0
@@ -121,54 +140,77 @@ install_openclaw() {
 }
 
 # --- Interview ---
-# Collects user preferences and stores in variables
+# Collects user preferences and stores in variables.
+# In non-interactive mode, reads from OC_* env vars instead of prompting.
 interview_user() {
   step "Setup Preferences"
-  echo "Answer these questions to configure your OpenClaw instance."
-  echo "Press Enter to accept defaults shown in [brackets]."
-  echo ""
 
-  # Model provider
-  echo "Model Provider Options:"
-  echo "  1) Anthropic (direct API key)"
-  echo "  2) OpenAI"
-  echo "  3) OpenRouter"
-  echo "  4) Custom OpenAI-compatible endpoint"
-  echo "  5) Local model (Ollama)"
-  read -rp "Choose model provider [1]: " MODEL_CHOICE
-  MODEL_CHOICE="${MODEL_CHOICE:-1}"
+  if [[ "$NON_INTERACTIVE" == "true" ]]; then
+    log "Non-interactive mode: reading config from OC_* environment variables"
+    MODEL_CHOICE="${OC_PROVIDER:-1}"
+    GW_PORT="${OC_PORT:-18789}"
+    CHANNELS="${OC_CHANNELS:-none}"
+  else
+    echo "Answer these questions to configure your OpenClaw instance."
+    echo "Press Enter to accept defaults shown in [brackets]."
+    echo ""
+
+    # Model provider
+    echo "Model Provider Options:"
+    echo "  1) Anthropic (direct API key)"
+    echo "  2) OpenAI"
+    echo "  3) OpenRouter"
+    echo "  4) Custom OpenAI-compatible endpoint"
+    echo "  5) Local model (Ollama)"
+    read -rp "Choose model provider [1]: " MODEL_CHOICE
+    MODEL_CHOICE="${MODEL_CHOICE:-1}"
+  fi
 
   case "$MODEL_CHOICE" in
     1)
       PROVIDER_NAME="anthropic"
       PROVIDER_API="anthropic"
-      read -rp "Default model [anthropic/claude-sonnet-4-6]: " DEFAULT_MODEL
-      DEFAULT_MODEL="${DEFAULT_MODEL:-anthropic/claude-sonnet-4-6}"
-      echo ""
-      echo "API Key Storage:"
-      echo "  Your API key will be stored in ~/.openclaw/.env (chmod 600)"
-      echo "  The config references it as \${ANTHROPIC_API_KEY}"
-      echo "  NEVER paste keys into openclaw.json directly"
-      echo ""
-      read -rsp "Paste your Anthropic API key (hidden): " API_KEY_VALUE
-      echo ""
-      API_KEY_ENV_NAME="ANTHROPIC_API_KEY"
+      API_KEY_ENV_NAME="${PROVIDER_NAME^^}_API_KEY"
+      if [[ "$NON_INTERACTIVE" == "true" ]]; then
+        DEFAULT_MODEL="${OC_MODEL:-anthropic/claude-sonnet-4-6}"
+        API_KEY_VALUE=""
+      else
+        read -rp "Default model [anthropic/claude-sonnet-4-6]: " DEFAULT_MODEL
+        DEFAULT_MODEL="${DEFAULT_MODEL:-anthropic/claude-sonnet-4-6}"
+        echo ""
+        echo "API Key Storage:"
+        echo "  Your API key will be stored in ~/.openclaw/.env (chmod 600)"
+        echo "  The config references it via env var"
+        echo "  NEVER paste keys into openclaw.json directly"
+        echo ""
+        read -rsp "Paste your API key (hidden): " API_KEY_VALUE
+        echo ""
+      fi
       ;;
     4)
       PROVIDER_API="openai-completions"
-      read -rp "Provider name (short, no spaces) [custom]: " PROVIDER_NAME
-      PROVIDER_NAME="${PROVIDER_NAME:-custom}"
-      read -rp "Base URL: " PROVIDER_BASE_URL
-      read -rp "Default model ID: " DEFAULT_MODEL_ID
-      DEFAULT_MODEL="${PROVIDER_NAME}/${DEFAULT_MODEL_ID}"
-      read -rp "Auth header? [true]: " AUTH_HEADER
-      AUTH_HEADER="${AUTH_HEADER:-true}"
-      echo ""
-      echo "API Key Storage:"
-      echo "  Stored in ~/.openclaw/.env as \${${PROVIDER_NAME^^}_API_KEY}"
-      echo ""
-      read -rsp "Paste your API key (hidden): " API_KEY_VALUE
-      echo ""
+      if [[ "$NON_INTERACTIVE" == "true" ]]; then
+        PROVIDER_NAME="${OC_PROVIDER_NAME:-custom}"
+        PROVIDER_BASE_URL="${OC_BASE_URL:?OC_BASE_URL required for custom provider}"
+        DEFAULT_MODEL_ID="${OC_MODEL_ID:?OC_MODEL_ID required for custom provider}"
+        DEFAULT_MODEL="${PROVIDER_NAME}/${DEFAULT_MODEL_ID}"
+        AUTH_HEADER="${OC_AUTH_HEADER:-true}"
+        API_KEY_VALUE=""
+      else
+        read -rp "Provider name (short, no spaces) [custom]: " PROVIDER_NAME
+        PROVIDER_NAME="${PROVIDER_NAME:-custom}"
+        read -rp "Base URL: " PROVIDER_BASE_URL
+        read -rp "Default model ID: " DEFAULT_MODEL_ID
+        DEFAULT_MODEL="${PROVIDER_NAME}/${DEFAULT_MODEL_ID}"
+        read -rp "Auth header? [true]: " AUTH_HEADER
+        AUTH_HEADER="${AUTH_HEADER:-true}"
+        echo ""
+        echo "API Key Storage:"
+        echo "  Stored in ~/.openclaw/.env as \${${PROVIDER_NAME^^}_API_KEY}"
+        echo ""
+        read -rsp "Paste your API key (hidden): " API_KEY_VALUE
+        echo ""
+      fi
       API_KEY_ENV_NAME="${PROVIDER_NAME^^}_API_KEY"
       ;;
     5)
@@ -296,17 +338,40 @@ configure_openclaw() {
       log_cmd "openclaw config set agents.defaults.model.primary '$DEFAULT_MODEL'"
       ;;
     4)
+      # T017: Set provider atomically with --json to avoid validation errors
+      # Setting fields one-by-one fails because the schema requires all fields together
       log_cmd "openclaw config set models.mode merge"
-      log_cmd "openclaw config set models.providers.${PROVIDER_NAME}.baseUrl '$PROVIDER_BASE_URL'"
-      log_cmd "openclaw config set models.providers.${PROVIDER_NAME}.api '$PROVIDER_API'"
-      log_cmd "openclaw config set models.providers.${PROVIDER_NAME}.authHeader $AUTH_HEADER"
-      log_cmd "openclaw config set models.providers.${PROVIDER_NAME}.apiKey '\${${API_KEY_ENV_NAME}}'"
+      log_cmd "openclaw config set models.providers.${PROVIDER_NAME} --json '{
+        \"baseUrl\": \"${PROVIDER_BASE_URL}\",
+        \"apiKey\": \"\${${API_KEY_ENV_NAME}}\",
+        \"api\": \"${PROVIDER_API}\",
+        \"authHeader\": ${AUTH_HEADER},
+        \"models\": [{
+          \"id\": \"${DEFAULT_MODEL_ID}\",
+          \"name\": \"${DEFAULT_MODEL_ID}\",
+          \"reasoning\": true,
+          \"input\": [\"text\", \"image\"],
+          \"contextWindow\": ${OC_CONTEXT_WINDOW:-200000},
+          \"maxTokens\": ${OC_MAX_TOKENS:-64000}
+        }]
+      }'"
       log_cmd "openclaw config set agents.defaults.model.primary '$DEFAULT_MODEL'"
       ;;
     5)
+      # T017: Set Ollama provider atomically
       log_cmd "openclaw config set models.mode merge"
-      log_cmd "openclaw config set models.providers.ollama.baseUrl '$PROVIDER_BASE_URL'"
-      log_cmd "openclaw config set models.providers.ollama.api '$PROVIDER_API'"
+      log_cmd "openclaw config set models.providers.ollama --json '{
+        \"baseUrl\": \"${PROVIDER_BASE_URL}\",
+        \"api\": \"${PROVIDER_API}\",
+        \"models\": [{
+          \"id\": \"${DEFAULT_MODEL_ID}\",
+          \"name\": \"${DEFAULT_MODEL_ID}\",
+          \"reasoning\": false,
+          \"input\": [\"text\"],
+          \"contextWindow\": 128000,
+          \"maxTokens\": 32000
+        }]
+      }'"
       log_cmd "openclaw config set agents.defaults.model.primary '$DEFAULT_MODEL'"
       ;;
   esac
