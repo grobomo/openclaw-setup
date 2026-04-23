@@ -1,1 +1,4 @@
 SESSION_STATE.md
+.workflow-state.json
+.claude/worktrees/
+docs/setup-log-*.log
