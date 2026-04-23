@@ -371,8 +371,10 @@ store_secrets() {
     done
   fi
 
-  chmod 600 "$OPENCLAW_ENV"
-  log "Secrets file permissions set to 600"
+  if [[ -f "$OPENCLAW_ENV" ]]; then
+    chmod 600 "$OPENCLAW_ENV"
+    log "Secrets file permissions set to 600"
+  fi
 }
 
 # --- Configure ---
@@ -480,16 +482,18 @@ start_and_verify() {
   # Start gateway
   log_cmd openclaw gateway start
 
-  # Wait for gateway to be ready
-  log "Waiting for gateway..."
-  local retries=10
-  while [[ $retries -gt 0 ]]; do
-    if openclaw gateway status 2>/dev/null | grep -q "running"; then
-      break
-    fi
-    sleep 2
-    ((retries--))
-  done
+  if [[ "$DRY_RUN" != "true" ]]; then
+    # Wait for gateway to be ready
+    log "Waiting for gateway..."
+    local retries=10
+    while [[ $retries -gt 0 ]]; do
+      if openclaw gateway status 2>/dev/null | grep -q "running"; then
+        break
+      fi
+      sleep 2
+      ((retries--))
+    done
+  fi
 
   step "Verification"
   log_cmd openclaw gateway status

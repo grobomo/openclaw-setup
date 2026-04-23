@@ -54,5 +54,5 @@
 - [x] T024: Scan previous session logs for deferred/skipped/temporary work — no tangents found
 - [x] T025: Run full test suite E2E — 15/15 suites, 78/78 assertions, gateway healthy (pid 5138)
 - [x] T026: Code review — 6 fixes: eval→direct exec, add OpenAI/OpenRouter providers, redactSensitive on, env_set dedup helper, docs/ mkdir, document OC_CONTEXT_WINDOW/OC_MAX_TOKENS
-- [ ] T027: Verify setup script works end-to-end on a clean WSL environment (dry-run mode)
+- [x] T027: Dry-run mode verified E2E — all 5 providers work, channels configured, gateway wait skipped, no side effects
 - [ ] T028: Zoom out — integration with other grobomo projects, fleet deployment readiness
