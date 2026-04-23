@@ -106,3 +106,10 @@ OpenClaw was offline for 12+ hours. Joel investigated and found `openclaw.json` 
 - [x] T046: Added `validate_config()` function to `scripts/openclaw-setup.sh` — runs after all config writes, uses `node -e JSON.parse()` to catch invalid JSON before gateway start. Test assertions added to T026 suite (14 assertions, all pass).
 - [x] T047: Dreaming re-enabled via `openclaw config set plugins.entries.memory-core.config.dreaming.enabled true`. Gateway restarted, memory-core loaded among 9 plugins. Gateway logs confirm config change detected and applied.
 - [x] T048: Added "Dreaming Config — CORRECT SYNTAX DOCUMENTED" decision to `~/.openclaw/workspace/DECISIONS.md` with root cause, correct schema, and DO-NOT rules (never edit JSON directly, always use `openclaw config set`).
+
+## Phase 15: Final Audit & Hardening -- COMPLETE
+- [x] T053: Scan 7 session logs — no incomplete tangents, no deferred work
+- [x] T054: Full test suite — 20/20 suites, 96/96 assertions pass, 0 failures
+- [x] T055: Code review — no eval, no rm -rf, no FIXME/HACK/TODO in code, bash syntax valid, 588 lines clean
+- [x] T056: validate_config E2E — 5/5 tests pass in WSL (valid JSON accepted, missing brace caught, brace mismatch caught, real crash pattern caught, live config valid)
+- [x] T057: README assertion count verified correct at 96
