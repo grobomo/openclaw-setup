@@ -50,6 +50,9 @@ check "OC_CONTEXT_WINDOW documented in header" bash -c 'head -35 '"$SCRIPT"' | g
 # Bash 3.2 compat: CHANNEL_LIST uses ${arr[@]+...} pattern for empty arrays
 check "bash 3.2 safe array expansion" grep -q 'CHANNEL_LIST\[@\]+"' "$SCRIPT"
 
+# Bash 3.2 compat: no ${VAR^^} uppercase (Bash 4+ only), use tr instead
+check_not "no bash4 uppercase syntax" grep -q '^^}' "$SCRIPT"
+
 # Valid bash syntax
 check "valid bash syntax" bash -n "$SCRIPT"
 
