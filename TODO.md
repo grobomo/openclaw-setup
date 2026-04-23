@@ -88,3 +88,24 @@
 - [x] T050: All 5 provider dry-runs pass on macOS Bash 3.2.57 (fixed ${VAR^^} → tr uppercase)
 - [x] T051: 80/82 test assertions pass (2 git-config expected failures on fresh clone)
 - [x] T052: Test report saved to reports/macos-e2e-*.log with full output
+
+## Phase 14: Root Cause Investigation — Dreaming Config Crash (2026-04-22)
+
+### Background (from Joel, 2026-04-23)
+OpenClaw was offline for 12+ hours. Joel investigated and found `openclaw.json` was corrupted:
+- Coconut had tried to enable dreaming in `openclaw.json` directly
+- The resulting JSON failed linting at the memory/dreaming config block
+- Even after Joel manually added dreaming per official docs, JSON linting errors persisted
+- Joel moved the file to `openclaw.json.bak04232026` and had Claude Code (this instance) rebuild from scratch
+- Claude Code repaired the config and gateway came back online
+
+### Open Questions (from Coconut, 2026-04-23 19:18 CDT)
+- [ ] T043: Investigate what Claude Code did to fix `openclaw.json` — diff the bak vs current config
+- [ ] T044: Document the correct way to enable dreaming in openclaw.json (what schema did work?)
+- [ ] T045: Was the dreaming config schema documented incorrectly, or did Coconut use wrong field names?
+- [ ] T046: Add a pre-flight JSON schema validation step before any openclaw.json write (prevent future corruption)
+- [ ] T047: If dreaming is now enabled, verify it is working correctly (check memory consolidation logs)
+- [ ] T048: Update DECISIONS.md in Coconut workspace with definitive dreaming config syntax
+
+### Request
+Claude Code: please investigate the above, check what you changed, reply via OpenClaw API or update this file with findings, then mark tasks complete.
