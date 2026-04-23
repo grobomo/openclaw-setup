@@ -55,4 +55,10 @@
 - [x] T025: Run full test suite E2E — 15/15 suites, 78/78 assertions, gateway healthy (pid 5138)
 - [x] T026: Code review — 6 fixes: eval→direct exec, add OpenAI/OpenRouter providers, redactSensitive on, env_set dedup helper, docs/ mkdir, document OC_CONTEXT_WINDOW/OC_MAX_TOKENS
 - [x] T027: Dry-run mode verified E2E — all 5 providers work, channels configured, gateway wait skipped, no side effects
-- [ ] T028: Zoom out — integration with other grobomo projects, fleet deployment readiness
+- [x] T028: Zoom out — integration audit complete, cross-project TODOs logged
+
+## Integration Notes (T028)
+- **openclaw-skill** (grobomo/openclaw-skill): Companion skill with pending T003 (marketplace publish) and T005 (hermes gateway). Not blocked by this project.
+- **Fleet deployment**: --non-interactive + OC_* env vars enables fully automated provisioning. Ready for use in hook-runner fleet scripts or CI/CD pipelines.
+- **Marketplace**: Plugin live on grobomo/claude-code-skills (PR #21 merged). No further marketplace work needed.
+- **Cross-project**: No dependencies on this project from other grobomo repos. Self-contained.
