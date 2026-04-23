@@ -66,6 +66,7 @@ upload_and_run() {
   # Upload a local script to the Mac via SSM (base64 encode), then execute it
   local LOCAL_SCRIPT="$1"
   local TIMEOUT="${2:-600}"
+  local BRANCH="${3:-main}"
 
   local B64
   B64=$(base64 < "$LOCAL_SCRIPT" | tr -d '\n')
@@ -78,11 +79,12 @@ b64 = sys.argv[1]
 cmds = [
     'echo ' + b64 + ' | base64 -d > /tmp/openclaw-mac-test.sh',
     'chmod +x /tmp/openclaw-mac-test.sh',
+    'export OC_TEST_BRANCH=""" + sys.argv[2] + """',
     'bash /tmp/openclaw-mac-test.sh',
     'rm -f /tmp/openclaw-mac-test.sh'
 ]
 print(json.dumps(cmds))
-" "$B64")
+" "$B64" "$BRANCH")
 
   ssm_exec "$COMMANDS_JSON" "$TIMEOUT"
 }
@@ -98,18 +100,20 @@ case "${1:-help}" in
     ;;
 
   test)
-    echo "=== Running macOS E2E test via SSM ==="
+    BRANCH="${2:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo main)}"
+    echo "=== Running macOS E2E test via SSM (branch: $BRANCH) ==="
     echo ""
-    upload_and_run "$REMOTE_SCRIPT" 600
+    upload_and_run "$REMOTE_SCRIPT" 600 "$BRANCH"
     ;;
 
   report)
+    BRANCH="${2:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo main)}"
     mkdir -p "$REPORT_DIR"
     REPORT_FILE="$REPORT_DIR/macos-e2e-$(date +%Y%m%d-%H%M%S).log"
-    echo "=== Running macOS E2E test via SSM ==="
+    echo "=== Running macOS E2E test via SSM (branch: $BRANCH) ==="
     echo "Report: $REPORT_FILE"
     echo ""
-    upload_and_run "$REMOTE_SCRIPT" 600 2>&1 | tee "$REPORT_FILE"
+    upload_and_run "$REMOTE_SCRIPT" 600 "$BRANCH" 2>&1 | tee "$REPORT_FILE"
     echo ""
     echo "Report saved: $REPORT_FILE"
     ;;
