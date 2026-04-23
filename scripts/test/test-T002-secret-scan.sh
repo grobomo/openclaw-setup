@@ -7,7 +7,7 @@ FILE=".github/workflows/secret-scan.yml"
 [ -f "$FILE" ] || { echo "FAIL: $FILE missing"; exit 1; }
 
 PASS=0; FAIL=0
-check() { if grep -q "$1" "$FILE"; then echo "PASS: scans for $2"; ((PASS++)); else echo "FAIL: missing $2"; ((FAIL++)); fi; }
+check() { if grep -q "$1" "$FILE"; then echo "PASS: scans for $2"; PASS=$((PASS+1)); else echo "FAIL: missing $2"; FAIL=$((FAIL+1)); fi; }
 
 check 'subscription' 'subscription IDs'
 check 'API key' 'API keys'

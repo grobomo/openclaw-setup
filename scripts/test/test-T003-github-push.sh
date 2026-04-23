@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
 PASS=0; FAIL=0
-check() { if eval "$1" &>/dev/null; then echo "PASS: $2"; ((PASS++)); else echo "FAIL: $2"; ((FAIL++)); fi; }
+check() { if eval "$1" &>/dev/null; then echo "PASS: $2"; PASS=$((PASS+1)); else echo "FAIL: $2"; FAIL=$((FAIL+1)); fi; }
 
 check 'git rev-parse --is-inside-work-tree' 'is a git repo'
 check 'git config user.name' 'user.name set'

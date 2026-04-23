@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
 PASS=0; FAIL=0
-check() { if [ -e "$1" ]; then echo "PASS: $1"; ((PASS++)); else echo "FAIL: $1 missing"; ((FAIL++)); fi; }
+check() { if [ -e "$1" ]; then echo "PASS: $1"; PASS=$((PASS+1)); else echo "FAIL: $1 missing"; FAIL=$((FAIL+1)); fi; }
 
 check ".github/publish.json"
 check ".github/workflows/secret-scan.yml"
