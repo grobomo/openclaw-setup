@@ -318,7 +318,7 @@ store_secrets() {
   if [[ "$NON_INTERACTIVE" == "true" ]]; then
     log "Non-interactive: skipping token prompts (tokens must be pre-set in $OPENCLAW_ENV)"
   else
-    for ch in "${CHANNEL_LIST[@]}"; do
+    for ch in ${CHANNEL_LIST[@]+"${CHANNEL_LIST[@]}"}; do
       ch="$(echo "$ch" | xargs)"  # trim whitespace
       case "$ch" in
         slack)
@@ -431,7 +431,7 @@ configure_openclaw() {
   log_cmd openclaw config set agents.defaults.compaction.notifyUser true
 
   # Channels
-  for ch in "${CHANNEL_LIST[@]}"; do
+  for ch in ${CHANNEL_LIST[@]+"${CHANNEL_LIST[@]}"}; do
     ch="$(echo "$ch" | xargs)"
     case "$ch" in
       slack)

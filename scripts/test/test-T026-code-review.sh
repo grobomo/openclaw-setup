@@ -47,6 +47,9 @@ check "slack tokens use env_set" grep -q 'env_set "SLACK_BOT_TOKEN"' "$SCRIPT"
 # OC_CONTEXT_WINDOW documented in header
 check "OC_CONTEXT_WINDOW documented in header" bash -c 'head -35 '"$SCRIPT"' | grep -q OC_CONTEXT_WINDOW'
 
+# Bash 3.2 compat: CHANNEL_LIST uses ${arr[@]+...} pattern for empty arrays
+check "bash 3.2 safe array expansion" grep -q 'CHANNEL_LIST\[@\]+"' "$SCRIPT"
+
 # Valid bash syntax
 check "valid bash syntax" bash -n "$SCRIPT"
 

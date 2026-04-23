@@ -35,7 +35,7 @@ bash scripts/openclaw-setup.sh
 | `skill/SKILL.md` | Claude Code skill definition for marketplace |
 | `docs/research.md` | Consolidated research from 7 sources (official docs, bugs, guides) |
 | `docs/setup-log.md` | Timestamped log of every setup command with root cause analysis |
-| `scripts/test/test-T*.sh` | 15 test suites (83 assertions) covering all tasks |
+| `scripts/test/test-T*.sh` | 20 test suites (92 assertions) covering all tasks |
 
 ## Usage
 
@@ -96,7 +96,7 @@ openclaw-setup/
     test/
       test-T001-*.sh          # Project scaffolding tests
       test-T002-*.sh          # Secret scan tests
-      ...                     # 15 test suites total
+      ...                     # 20 test suites total
   skill/
     SKILL.md                  # Claude Code skill definition
   TODO.md                     # Task tracker

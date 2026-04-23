@@ -62,3 +62,10 @@
 - **Fleet deployment**: --non-interactive + OC_* env vars enables fully automated provisioning. Ready for use in hook-runner fleet scripts or CI/CD pipelines.
 - **Marketplace**: Plugin live on grobomo/claude-code-skills (PR #21 merged). No further marketplace work needed.
 - **Cross-project**: No dependencies on this project from other grobomo repos. Self-contained.
+
+## Phase 10: Deep Audit & Hardening
+- [x] T029: Scan all 4 session logs — no incomplete tangents found, orphan agent dir is deployment artifact not project issue
+- [x] T030: Run full test suite E2E — 20/20 suites, 92/92 assertions pass
+- [x] T031: Gateway verified — restarted (pid 7166), port 18789, 401 on unauthenticated (correct)
+- [x] T032: Code review — fix bash 3.2 empty array expansion (CHANNEL_LIST), add compat test assertion
+- [x] T033: README updated — test counts 15→20 suites, 83→92 assertions
