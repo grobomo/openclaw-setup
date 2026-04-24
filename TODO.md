@@ -151,4 +151,4 @@ OpenClaw was offline for 12+ hours. Joel investigated and found `openclaw.json` 
 - [x] T080: Full test suite E2E — 21/21 suites, 113/113 assertions, 0 failures
 - [x] T081: Code review — fix Bash 3.2 empty array length check on line 606, added regression test (114 assertions)
 - [x] T082: Zoom out — gateway healthy (pid 25094), config valid, 3 plugins, README assertion count updated to 114
-- [ ] T083: Update README assertion count 113→114
+- [x] T083: Update README assertion count 113→115, added self-verifying count test (22 suites, 115 assertions)
