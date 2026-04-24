@@ -120,3 +120,15 @@ OpenClaw was offline for 12+ hours. Joel investigated and found `openclaw.json` 
 - [x] T060: Diff command — compares top-level keys and sizes between current and backup
 - [x] T061: Test suite — 12/12 assertions (existence, syntax, all commands, safety checks, no eval)
 - [x] T062: README updated — added config-backup docs, usage section, updated test counts to 21 suites / 108 assertions
+
+## Phase 17: Post-Completion Maintenance -- COMPLETE
+- [x] T063: Scan 8 session logs — no incomplete tangents, all prior work resolved
+- [x] T064: Full test suite — 21/21 suites, 108/108 assertions pass, 0 failures
+- [x] T065: config-backup.sh E2E in WSL — backup, list, diff, restore all work, JSON validated
+- [x] T066: Remote branches clean — only origin/main, 2 local worktrees already removed
+
+## Phase 18: Plugin Trust Pinning — Security Hardening -- COMPLETE
+- [x] T068: Added pin_plugin_trust() — detects installed plugins, sets plugins.allow as JSON array
+- [x] T069: OC_PLUGINS_ALLOW env var for non-interactive mode, documented in header
+- [x] T070: 5 new test assertions — function exists, called in configure, plugins.allow set, env var documented and used
+- [x] T071: Committed and pushed, 21 suites / 113 assertions / 0 failures
