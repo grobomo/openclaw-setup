@@ -145,3 +145,9 @@ OpenClaw was offline for 12+ hours. Joel investigated and found `openclaw.json` 
 - [x] T076: Added config-backup commands, plugin trust section, non-interactive example to SKILL.md
 - [x] T077: Added trigger keywords: openclaw backup, openclaw restore, openclaw config backup
 - [x] T078: All tests pass, committed and pushed
+
+## Phase 22: Session Audit & Hardening
+- [x] T079: Scan session logs for incomplete tangents — no deferred work found
+- [x] T080: Full test suite E2E — 21/21 suites, 113/113 assertions, 0 failures
+- [x] T081: Code review — fix Bash 3.2 empty array length check on line 606, added regression test (114 assertions)
+- [ ] T082: Zoom out — integration check, real-world value assessment

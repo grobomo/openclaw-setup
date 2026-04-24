@@ -66,6 +66,9 @@ check "plugins.allow set as JSON array" grep -q 'plugins.allow' "$SCRIPT"
 check "OC_PLUGINS_ALLOW documented in header" bash -c 'head -35 '"$SCRIPT"' | grep -q OC_PLUGINS_ALLOW'
 check "OC_PLUGINS_ALLOW used in pin_plugin_trust" grep -q 'OC_PLUGINS_ALLOW' "$SCRIPT"
 
+# T081: No raw ${#CHANNEL_LIST[@]} (Bash 3.2 unbound variable on empty array under set -u)
+check_not "no raw CHANNEL_LIST length check" grep -q '${#CHANNEL_LIST' "$SCRIPT"
+
 # Valid bash syntax
 check "valid bash syntax" bash -n "$SCRIPT"
 

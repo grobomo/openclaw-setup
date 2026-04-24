@@ -603,7 +603,7 @@ start_and_verify() {
   log_cmd openclaw doctor
   log_cmd openclaw config validate
 
-  if [[ ${#CHANNEL_LIST[@]} -gt 0 ]]; then
+  if [[ "$CHANNELS" != "none" && -n "$CHANNELS" ]]; then
     log_cmd openclaw channel list
   fi
 }
