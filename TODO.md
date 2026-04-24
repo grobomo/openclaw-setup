@@ -114,8 +114,9 @@ OpenClaw was offline for 12+ hours. Joel investigated and found `openclaw.json` 
 - [x] T056: validate_config E2E — 5/5 tests pass in WSL (valid JSON accepted, missing brace caught, brace mismatch caught, real crash pattern caught, live config valid)
 - [x] T057: README assertion count verified correct at 96
 
-## Project Status: COMPLETE (2026-04-23)
-
-All 57 tasks across 15 phases are done. Tested on WSL, EC2 Linux, and macOS (Bash 3.2+5.2). Published to grobomo marketplace (PR #21). No remaining work items.
-
-Cross-project: openclaw-skill (grobomo/openclaw-skill) has separate pending tasks (T003, T005) — not blocked by this project.
+## Phase 16: Config Backup/Restore — Crash Recovery Gap -- COMPLETE
+- [x] T058: Created `scripts/config-backup.sh` — backup with metadata wrapper (timestamp, sha256, hostname)
+- [x] T059: Restore from backup with JSON validation, pre-restore safety backup, rollback on failure
+- [x] T060: Diff command — compares top-level keys and sizes between current and backup
+- [x] T061: Test suite — 12/12 assertions (existence, syntax, all commands, safety checks, no eval)
+- [x] T062: README updated — added config-backup docs, usage section, updated test counts to 21 suites / 108 assertions

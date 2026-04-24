@@ -35,7 +35,8 @@ bash scripts/openclaw-setup.sh
 | `skill/SKILL.md` | Claude Code skill definition for marketplace |
 | `docs/research.md` | Consolidated research from 7 sources (official docs, bugs, guides) |
 | `docs/setup-log.md` | Timestamped log of every setup command with root cause analysis |
-| `scripts/test/test-T*.sh` | 20 test suites (96 assertions) covering all tasks |
+| `scripts/config-backup.sh` | Config backup/restore/diff — prevents data loss on config corruption |
+| `scripts/test/test-T*.sh` | 21 test suites (108 assertions) covering all tasks |
 | `scripts/aws/ec2-test.sh` | EC2 spot instance launcher for E2E testing on clean Linux |
 | `scripts/aws/ec2-spot-template.yaml` | CloudFormation template (t3.micro, Ubuntu 24.04) |
 | `scripts/aws/mac-test.sh` | macOS E2E test runner via SSM (dedicated Mac instance) |
@@ -99,6 +100,20 @@ bash scripts/aws/mac-test.sh report     # Same as test, saves report to reports/
 ```
 
 Validated on macOS 15.7.3 (arm64) with Bash 3.2.57.
+
+### Config backup/restore
+
+Protects against config corruption (a missing brace once caused a 12-hour outage):
+
+```bash
+bash scripts/config-backup.sh backup          # Snapshot current config
+bash scripts/config-backup.sh list            # Show all backups
+bash scripts/config-backup.sh diff            # Compare current vs latest backup
+bash scripts/config-backup.sh restore         # Restore latest backup
+bash scripts/config-backup.sh restore <file>  # Restore specific backup
+```
+
+Backups include metadata (timestamp, sha256, hostname) and validate JSON before writing.
 
 ## Why Use It
 
