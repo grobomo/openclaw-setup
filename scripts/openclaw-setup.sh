@@ -492,7 +492,7 @@ pin_plugin_trust() {
   else
     # Interactive: detect installed plugins and ask which to trust
     local discovered=""
-    discovered="$(openclaw config get plugins.entries 2>/dev/null | grep -oP '"\K[^"]+(?="\s*:)' | tr '\n' ',' | sed 's/,$//')" || true
+    discovered="$(openclaw config get plugins.entries 2>/dev/null | sed -n 's/.*"\([^"]*\)"[[:space:]]*:.*/\1/p' | tr '\n' ',' | sed 's/,$//')" || true
 
     if [[ -z "$discovered" ]]; then
       # Try extension directory scan as fallback

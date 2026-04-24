@@ -132,3 +132,7 @@ OpenClaw was offline for 12+ hours. Joel investigated and found `openclaw.json` 
 - [x] T069: OC_PLUGINS_ALLOW env var for non-interactive mode, documented in header
 - [x] T070: 5 new test assertions — function exists, called in configure, plugins.allow set, env var documented and used
 - [x] T071: Committed and pushed, 21 suites / 113 assertions / 0 failures
+
+## Phase 19: macOS Compatibility Fix -- COMPLETE
+- [x] T072: Replaced grep -oP with POSIX sed in pin_plugin_trust — works on macOS Bash 3.2
+- [x] T073: Full test suite — 21/21 suites, 113/113 assertions, 0 failures
