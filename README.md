@@ -60,6 +60,7 @@ OC_BASE_URL=https://api.example.com/v1 \
 OC_MODEL_ID=claude-4.6-sonnet \
 OC_CHANNELS=slack \
 OC_PORT=18789 \
+OC_PLUGINS_ALLOW=coconut-guardrails,hook-runner-gates,memory-core \
 bash scripts/openclaw-setup.sh --non-interactive --skip-install
 ```
 

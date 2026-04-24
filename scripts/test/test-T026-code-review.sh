@@ -57,6 +57,15 @@ check_not "no bash4 uppercase syntax" grep -q '^^}' "$SCRIPT"
 check "validate_config function exists" grep -q 'validate_config()' "$SCRIPT"
 check "validate_config called after configure" grep -q 'validate_config' "$SCRIPT"
 
+# T068: Plugin trust pinning
+check "pin_plugin_trust function exists" grep -q 'pin_plugin_trust()' "$SCRIPT"
+check "pin_plugin_trust called in configure" grep -q 'pin_plugin_trust' "$SCRIPT"
+check "plugins.allow set as JSON array" grep -q 'plugins.allow' "$SCRIPT"
+
+# T069: OC_PLUGINS_ALLOW env var for non-interactive
+check "OC_PLUGINS_ALLOW documented in header" bash -c 'head -35 '"$SCRIPT"' | grep -q OC_PLUGINS_ALLOW'
+check "OC_PLUGINS_ALLOW used in pin_plugin_trust" grep -q 'OC_PLUGINS_ALLOW' "$SCRIPT"
+
 # Valid bash syntax
 check "valid bash syntax" bash -n "$SCRIPT"
 

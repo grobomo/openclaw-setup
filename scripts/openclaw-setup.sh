@@ -26,6 +26,7 @@
 #     OC_AUTH_HEADER    - Use auth header (default: true)
 #     OC_CONTEXT_WINDOW - Model context window size (default: 200000)
 #     OC_MAX_TOKENS     - Model max output tokens (default: 64000)
+#     OC_PLUGINS_ALLOW - Comma-separated plugin IDs to trust (default: empty = warn only)
 #   API keys must be pre-set in ~/.openclaw/.env
 #
 # Secrets are stored in ~/.openclaw/.env (chmod 600), never in config files.
@@ -464,8 +465,84 @@ configure_openclaw() {
   log_cmd openclaw config set logging.level info
   log_cmd openclaw config set logging.redactSensitive on
 
+  # T068: Pin trusted plugins via plugins.allow — prevents untrusted auto-loading
+  pin_plugin_trust
+
   # T046: Pre-flight JSON validation — catch brace mismatches before gateway start
   validate_config
+}
+
+# --- Plugin Trust Pinning (T068) ---
+pin_plugin_trust() {
+  local plugins_allow=""
+
+  if [[ "$DRY_RUN" == "true" ]]; then
+    log "  [dry-run] pin_plugin_trust — would detect and pin installed plugins"
+    return 0
+  fi
+
+  if [[ "$NON_INTERACTIVE" == "true" ]]; then
+    # T069: Non-interactive mode uses OC_PLUGINS_ALLOW env var
+    plugins_allow="${OC_PLUGINS_ALLOW:-}"
+    if [[ -z "$plugins_allow" ]]; then
+      log "OC_PLUGINS_ALLOW not set — skipping plugin trust pinning"
+      warn "plugins.allow is empty; discovered plugins will auto-load without trust verification"
+      return 0
+    fi
+  else
+    # Interactive: detect installed plugins and ask which to trust
+    local discovered=""
+    discovered="$(openclaw config get plugins.entries 2>/dev/null | grep -oP '"\K[^"]+(?="\s*:)' | tr '\n' ',' | sed 's/,$//')" || true
+
+    if [[ -z "$discovered" ]]; then
+      # Try extension directory scan as fallback
+      local ext_dir="$OPENCLAW_HOME/extensions"
+      if [[ -d "$ext_dir" ]]; then
+        discovered="$(ls -1 "$ext_dir" 2>/dev/null | tr '\n' ',' | sed 's/,$//')" || true
+      fi
+    fi
+
+    if [[ -z "$discovered" ]]; then
+      log "No plugins discovered — skipping trust pinning"
+      return 0
+    fi
+
+    echo ""
+    echo "Plugin Trust Pinning:"
+    echo "  Discovered plugins: $discovered"
+    echo "  Setting plugins.allow pins trusted plugins explicitly."
+    echo "  Untrusted plugins will NOT auto-load."
+    echo ""
+    read -rp "Plugins to trust (comma-separated, or 'all' for above, or 'none') [$discovered]: " plugins_allow
+    plugins_allow="${plugins_allow:-$discovered}"
+
+    if [[ "$plugins_allow" == "none" ]]; then
+      log "Skipping plugin trust pinning"
+      return 0
+    fi
+    if [[ "$plugins_allow" == "all" ]]; then
+      plugins_allow="$discovered"
+    fi
+  fi
+
+  # Set plugins.allow as JSON array
+  local json_array="["
+  local first=true
+  IFS=',' read -ra plugin_ids <<< "$plugins_allow"
+  for pid in "${plugin_ids[@]}"; do
+    pid="$(echo "$pid" | xargs)"  # trim whitespace
+    if [[ -z "$pid" ]]; then continue; fi
+    if [[ "$first" == "true" ]]; then
+      json_array+="\"$pid\""
+      first=false
+    else
+      json_array+=",\"$pid\""
+    fi
+  done
+  json_array+="]"
+
+  log_cmd openclaw config set plugins.allow --json "$json_array"
+  log "Pinned trusted plugins: $plugins_allow"
 }
 
 # --- Config Validation (T046) ---
