@@ -136,3 +136,7 @@ OpenClaw was offline for 12+ hours. Joel investigated and found `openclaw.json` 
 ## Phase 19: macOS Compatibility Fix -- COMPLETE
 - [x] T072: Replaced grep -oP with POSIX sed in pin_plugin_trust — works on macOS Bash 3.2
 - [x] T073: Full test suite — 21/21 suites, 113/113 assertions, 0 failures
+
+## Phase 20: Fix Plugin Discovery Parsing -- COMPLETE
+- [x] T074: Fixed sed to match top-level keys only (^  "key":), swapped priority: extension dir scan is now primary, sed fallback secondary
+- [x] T075: Both methods verified against live OpenClaw — ext dir returns installed plugins, sed returns configured entries

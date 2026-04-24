@@ -490,16 +490,16 @@ pin_plugin_trust() {
       return 0
     fi
   else
-    # Interactive: detect installed plugins and ask which to trust
+    # Interactive: detect installed plugins via extension directory (most reliable)
     local discovered=""
-    discovered="$(openclaw config get plugins.entries 2>/dev/null | sed -n 's/.*"\([^"]*\)"[[:space:]]*:.*/\1/p' | tr '\n' ',' | sed 's/,$//')" || true
+    local ext_dir="$OPENCLAW_HOME/extensions"
+    if [[ -d "$ext_dir" ]]; then
+      discovered="$(ls -1 "$ext_dir" 2>/dev/null | tr '\n' ',' | sed 's/,$//')" || true
+    fi
 
     if [[ -z "$discovered" ]]; then
-      # Try extension directory scan as fallback
-      local ext_dir="$OPENCLAW_HOME/extensions"
-      if [[ -d "$ext_dir" ]]; then
-        discovered="$(ls -1 "$ext_dir" 2>/dev/null | tr '\n' ',' | sed 's/,$//')" || true
-      fi
+      # Fallback: parse top-level keys from plugins.entries JSON (2-space indent = top-level)
+      discovered="$(openclaw config get plugins.entries 2>/dev/null | sed -n 's/^  "\([^"]*\)"[[:space:]]*:.*/\1/p' | tr '\n' ',' | sed 's/,$//')" || true
     fi
 
     if [[ -z "$discovered" ]]; then
