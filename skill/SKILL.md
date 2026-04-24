@@ -8,6 +8,9 @@ triggers:
   - openclaw setup
   - configure openclaw
   - openclaw install
+  - openclaw backup
+  - openclaw restore
+  - openclaw config backup
 ---
 
 # OpenClaw Setup Skill
@@ -24,8 +27,10 @@ that connects to messaging platforms (Slack, Discord, Telegram, Signal, WhatsApp
    - Guide them to get tokens (with links to official setup pages)
 3. **Configure everything** using `openclaw config set` commands (NEVER edit JSON directly)
 4. **Store secrets securely** in `~/.openclaw/.env` with proper permissions
-5. **Verify the deployment** with `openclaw doctor` and `openclaw gateway status`
-6. **Track all changes** in a local git repo for rollback capability
+5. **Pin trusted plugins** via `plugins.allow` to prevent untrusted auto-loading
+6. **Verify the deployment** with `openclaw doctor` and `openclaw gateway status`
+7. **Back up and restore config** with timestamped, validated snapshots
+8. **Track all changes** in a local git repo for rollback capability
 
 ## Critical Rules
 
@@ -42,12 +47,25 @@ that connects to messaging platforms (Slack, Discord, Telegram, Signal, WhatsApp
 - Run `openclaw config validate` after any changes
 - Run `openclaw doctor --fix` to catch schema drift
 
+### Plugin Trust
+- Set `plugins.allow` to an explicit list of trusted plugin IDs
+- Prevents unknown plugins from auto-loading (the vector behind Bug #6028 crashes)
+- In non-interactive mode: `OC_PLUGINS_ALLOW=coconut-guardrails,memory-core`
+
 ### Recovery
 If config gets corrupted:
 ```bash
+bash scripts/config-backup.sh restore <backup-file>            # restore validated backup
 openclaw doctor --fix                                          # auto-repair
-cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json     # restore backup
 openclaw config validate                                       # verify
+```
+
+Config backup commands:
+```bash
+bash scripts/config-backup.sh backup     # timestamped snapshot with sha256
+bash scripts/config-backup.sh list       # show available backups
+bash scripts/config-backup.sh diff <f>   # compare backup vs current
+bash scripts/config-backup.sh restore <f> # restore with pre-restore safety backup
 ```
 
 ## Setup Flow
@@ -66,12 +84,18 @@ openclaw config validate                                       # verify
 
 ## Automation Script
 
-For batch deployments, run:
+Interactive:
 ```bash
 bash scripts/openclaw-setup.sh [--config config.env] [--skip-install] [--dry-run]
 ```
 
-The script interviews the user, stores secrets securely, configures via CLI, and verifies.
+Non-interactive (CI/fleet):
+```bash
+OC_PROVIDER=1 OC_CHANNELS=slack OC_PLUGINS_ALLOW=memory-core,slack \
+bash scripts/openclaw-setup.sh --non-interactive --skip-install
+```
+
+The script interviews the user (or reads env vars), stores secrets, pins trusted plugins, validates JSON, and verifies.
 
 ## Channel Token Guide
 

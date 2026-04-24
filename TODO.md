@@ -140,3 +140,8 @@ OpenClaw was offline for 12+ hours. Joel investigated and found `openclaw.json` 
 ## Phase 20: Fix Plugin Discovery Parsing -- COMPLETE
 - [x] T074: Fixed sed to match top-level keys only (^  "key":), swapped priority: extension dir scan is now primary, sed fallback secondary
 - [x] T075: Both methods verified against live OpenClaw — ext dir returns installed plugins, sed returns configured entries
+
+## Phase 21: SKILL.md Update — Reflect New Features -- COMPLETE
+- [x] T076: Added config-backup commands, plugin trust section, non-interactive example to SKILL.md
+- [x] T077: Added trigger keywords: openclaw backup, openclaw restore, openclaw config backup
+- [x] T078: All tests pass, committed and pushed
