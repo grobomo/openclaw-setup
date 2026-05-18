@@ -55,7 +55,7 @@ Prompts for model provider, API keys, channels, and gateway port.
 
 ```bash
 OC_PROVIDER=4 \
-OC_PROVIDER_NAME=trendmicro-aiendpoint \
+OC_PROVIDER_NAME=custom-provider \
 OC_BASE_URL=https://api.example.com/v1 \
 OC_MODEL_ID=claude-4.6-sonnet \
 OC_CHANNELS=slack \

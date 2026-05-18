@@ -68,16 +68,16 @@ openclaw config set gateway.http.endpoints.chatCompletions.enabled true
 #### Step 3: Configure Model Provider (Trend Micro AI Endpoint)
 ```bash
 openclaw config set models.mode merge
-openclaw config set models.providers.trendmicro-aiendpoint.baseUrl \
-  "https://api.rdsec.trendmicro.com/prod/aiendpoint/v1"
-openclaw config set models.providers.trendmicro-aiendpoint.api "openai-completions"
-openclaw config set models.providers.trendmicro-aiendpoint.authHeader true
-openclaw config set models.providers.trendmicro-aiendpoint.apiKey '${RDSEC_API_KEY}'
+openclaw config set models.providers.custom-provider.baseUrl \
+  "https://api.example.com/v1"
+openclaw config set models.providers.custom-provider.api "openai-completions"
+openclaw config set models.providers.custom-provider.authHeader true
+openclaw config set models.providers.custom-provider.apiKey '${RDSEC_API_KEY}'
 ```
 
 #### Step 4: Set Default Model
 ```bash
-openclaw config set agents.defaults.model.primary "trendmicro-aiendpoint/claude-4.6-sonnet"
+openclaw config set agents.defaults.model.primary "custom-provider/claude-4.6-sonnet"
 ```
 
 #### Step 5: Auth Claude CLI
